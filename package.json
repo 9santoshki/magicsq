@@ -6,10 +6,10 @@
   "homepage": "https://9santoshki.github.io/magicsq",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build",
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
+    "build": "npm run build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.7",
