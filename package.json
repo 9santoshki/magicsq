@@ -5,10 +5,11 @@
   "type": "module",
   "homepage": "https://9santoshki.github.io/magicsq",
   "scripts": {
-    "dev": "npm run dev",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
     "lint": "eslint .",
-    "preview": "npm run dev",
-    "build": "npm run build"
+    "eject": "react-scripts eject"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.7",
