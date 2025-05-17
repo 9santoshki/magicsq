@@ -5,9 +5,10 @@
   "type": "module",
   "homepage": "https://9santoshki.github.io/magicsq",
   "scripts": {
-    "dev": "npm run dev",
-    "build": "npm run build",
-    "deploy": "npm run build",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
     "lint": "eslint ."
   },
   "dependencies": {
