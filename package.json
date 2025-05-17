@@ -6,7 +6,7 @@
   "homepage": "https://9santoshki.github.io/magicsq",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build",
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
