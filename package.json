@@ -3,17 +3,15 @@
   "private": false,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://9santoshki.github.io/magicsq",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.7.0",
-    "@docusaurus/theme-classic": "^3.7.0",
     "@tailwindcss/vite": "^4.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
