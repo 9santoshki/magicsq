@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import html2canvas from 'html2canvas';
 
 const BODMASPuzzle: React.FC = () => {
   // Timer state
   const [seconds, setSeconds] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(true);
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
   const [result, setResult] = useState('');
   const [resultColor, setResultColor] = useState('black');
+  const [showShareButtons, setShowShareButtons] = useState(false);
+  const puzzleRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<NodeJS.Timeout>();
 
   // Answers grid
   const answers = [
@@ -28,12 +33,21 @@ const BODMASPuzzle: React.FC = () => {
   const [cellValues, setCellValues] = useState<Record<string, string>>(initialCellValues);
 
   // Timer effect
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSeconds(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+   useEffect(() => {
+    if (isTimerRunning) {
+      timerRef.current = setInterval(() => {
+        setSeconds(prev => prev + 1);
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isTimerRunning]);
 
   // Format timer display
   const formatTime = (timeInSeconds: number): string => {
@@ -102,11 +116,13 @@ const BODMASPuzzle: React.FC = () => {
     setCellValues(initialCellValues);
     setResult('');
     setSeconds(0);
+    setIsTimerRunning(true); // Restart the timer
     setSelectedCell(null);
+    setShowShareButtons(false);
   };
 
   // Check solution
-  const checkSolution = () => {
+const checkSolution = () => {
     let allFilled = true;
     const rowResults: boolean[] = [];
 
@@ -128,15 +144,61 @@ const BODMASPuzzle: React.FC = () => {
     if (!allFilled) {
       setResult("Kindly fill all the blanks to check solution.");
       setResultColor("red");
+      setShowShareButtons(false);
     } else if (rowResults.every(Boolean)) {
       setResult("✅ Excellent, Challenge Completed Successfully!");
       setResultColor("green");
+      setIsTimerRunning(false); // This stops the timer
+      setShowShareButtons(true);
     } else {
       const summary = rowResults
         .map((correct, i) => `Row ${i + 1} is ${correct ? "correct" : "incorrect"}`)
         .join(", ") + ", Try Again!";
       setResult(summary);
       setResultColor("orange");
+      setShowShareButtons(true);
+    }
+  };
+
+  // Share on social media
+  const shareOnSocialMedia = async (platform: string) => {
+    if (!puzzleRef.current) return;
+
+    try {
+      const canvas = await html2canvas(puzzleRef.current);
+      const image = canvas.toDataURL('image/png');
+      const timeTaken = formatTime(seconds);
+      const message = `I solved the BODMAS Puzzle in ${timeTaken}! Can you beat my time?`;
+
+      if (platform === 'facebook') {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(image)}&quote=${encodeURIComponent(message)}`, '_blank');
+      } else if (platform === 'twitter') {
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(image)}`, '_blank');
+      } else if (platform === 'whatsapp') {
+        window.open(`https://wa.me/?text=${encodeURIComponent(`${message} ${image}`)}`, '_blank');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  // Copy to clipboard
+  const copyToClipboard = async () => {
+    if (!puzzleRef.current) return;
+
+    try {
+      const canvas = await html2canvas(puzzleRef.current);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const item = new ClipboardItem({ 'image/png': blob });
+          navigator.clipboard.write([item]).then(() => {
+            alert('Image copied to clipboard!');
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Error copying:', error);
+      alert('Failed to copy image to clipboard');
     }
   };
 
@@ -195,6 +257,15 @@ const BODMASPuzzle: React.FC = () => {
       backgroundColor: '#007bff',
       color: 'white',
     },
+    shareButton: {
+      padding: '8px 15px',
+      margin: '5px',
+      fontSize: '16px',
+      cursor: 'pointer',
+      borderRadius: '5px',
+      border: 'none',
+      color: 'white',
+    },
     buttonHover: {
       backgroundColor: '#0056b3',
     },
@@ -211,21 +282,25 @@ const BODMASPuzzle: React.FC = () => {
     selectedCell: {
       backgroundColor: '#ffffcc',
     },
+    shareButtons: {
+      margin: '20px 0',
+      display: 'flex',
+      justifyContent: 'center',
+      flexWrap: 'wrap' as const,
+    },
   };
 
   return (
     <div style={styles.body}>
-      {/* <h1 style={styles.h1}>Aman's Magic Square, 5×5</h1> */}
       <p>Fill the blanks with numbers 1 to 9 to complete the equations following the BODMAS rule.</p>
 
       <div style={styles.timerContainer}>
         <h3>⏱️ Time Elapsed: <span>{formatTime(seconds)}</span></h3>
       </div>
 
-      <div style={styles.puzzle}>
+      <div style={styles.puzzle} ref={puzzleRef}>
         <table style={styles.table}>
         <tbody>
-
           {/* Row 1 */}
           <tr>
             <td style={styles.td}>
@@ -567,7 +642,6 @@ const BODMASPuzzle: React.FC = () => {
             <td>= 4</td>
           </tr>
           </tbody>
-
         </table>
 
         <div style={styles.controls}>
@@ -590,6 +664,35 @@ const BODMASPuzzle: React.FC = () => {
         <button style={styles.button} onClick={checkSolution}>Check Solution</button>
         <div style={{ ...styles.result, color: resultColor }}>{result}</div>
 
+        {showShareButtons && (
+          <div style={styles.shareButtons}>
+            <button 
+              style={{ ...styles.shareButton, backgroundColor: '#3b5998' }} 
+              onClick={() => shareOnSocialMedia('facebook')}
+            >
+              Share on Facebook
+            </button>
+            <button 
+              style={{ ...styles.shareButton, backgroundColor: '#1DA1F2' }} 
+              onClick={() => shareOnSocialMedia('twitter')}
+            >
+              Share on Twitter
+            </button>
+            <button 
+              style={{ ...styles.shareButton, backgroundColor: '#25D366' }} 
+              onClick={() => shareOnSocialMedia('whatsapp')}
+            >
+              Share on WhatsApp
+            </button>
+            <button 
+              style={{ ...styles.shareButton, backgroundColor: '#6c757d' }} 
+              onClick={copyToClipboard}
+            >
+              Copy Image
+            </button>
+          </div>
+        )}
+
         {/* Rules Section */}
         <div id="rules">
           <h3>Rules:</h3>
@@ -599,11 +702,6 @@ const BODMASPuzzle: React.FC = () => {
             <li>Each digit can come only once in an equation of a row or column.</li>
             <li>All digits from 1 to 9 should come at least once in the overall square of 5 rows and 5 column equations.</li>
           </ul>  
-        </div>
-
-        <div id="Copyright">
-          <h4>All Rights Reserved, Copyright@2024 by Aman Mahindroo</h4>
-          Any unauthorized use of this Game and its contents is prohibited.
         </div>
       </div>
     </div>
