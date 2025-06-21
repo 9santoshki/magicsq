@@ -16,7 +16,7 @@ const Header: React.FC = () => {
             <li>
               <Link
                 to="/"
-                className="px-5 py-2 hover:bg-gray-400 rounded-md transition duration-200 ease-in-out"
+                className="px-2 py-2 hover:bg-gray-400 rounded-md transition duration-200 ease-in-out"
               >
                 Home
               </Link>
@@ -24,7 +24,7 @@ const Header: React.FC = () => {
             <li>
               <Link
                 to="/about"
-                className="px-5 py-2 hover:bg-gray-400 rounded-md transition duration-200 ease-in-out"
+                className="px-2 py-2 hover:bg-gray-400 rounded-md transition duration-200 ease-in-out"
               >
                 About
               </Link>
@@ -32,7 +32,7 @@ const Header: React.FC = () => {
             <li>
               <Link
                 to="/contact"
-                className="px-5 py-2 hover:bg-gray-400 rounded-md transition duration-200 ease-in-out"
+                className="px-2 py-2 hover:bg-gray-400 rounded-md transition duration-200 ease-in-out"
               >
                 Contact
               </Link>

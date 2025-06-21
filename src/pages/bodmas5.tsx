@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import html2canvas from 'html2canvas';
+import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
+import DifficultyLevel from '../components/difficultyProps';
 
 const BODMASPuzzle: React.FC = () => {
   // Timer state
@@ -11,6 +13,7 @@ const BODMASPuzzle: React.FC = () => {
   const [showShareButtons, setShowShareButtons] = useState(false);
   const puzzleRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout>();
+  const blanksLeft = 2; // dynamically count this from puzzle state
 
   // Answers grid
   const answers = [
@@ -246,6 +249,9 @@ const checkSolution = () => {
       height: '40px',
       margin: '5px',
       fontSize: '18px',
+      backgroundColor: '#007bff',
+      color: 'white',
+
     },
     button: {
       padding: '8px 15px',
@@ -292,13 +298,36 @@ const checkSolution = () => {
 
   return (
     <div style={styles.body}>
+
       <p>Fill the blanks with numbers 1 to 9 to complete the equations following the BODMAS rule.</p>
 
       <div style={styles.timerContainer}>
+
         <h3>⏱️ Time Elapsed: <span>{formatTime(seconds)}</span></h3>
       </div>
 
+<div className="flex gap-3 items-center justify-center">
+                <DifficultyLevel blanksLeft={blanksLeft} />
+
+  <FaFacebook
+    onClick={() => shareOnSocialMedia('facebook')}
+    className="text-blue-600 hover:text-blue-800 cursor-pointer text-2xl"
+    title="Share on Facebook"
+  />
+  <FaTwitter
+    onClick={() => shareOnSocialMedia('twitter')}
+    className="text-blue-400 hover:text-blue-600 cursor-pointer text-2xl"
+    title="Share on Twitter"
+  />
+  <FaWhatsapp
+    onClick={() => shareOnSocialMedia('whatsapp')}
+    className="text-green-500 hover:text-green-700 cursor-pointer text-2xl"
+    title="Share on WhatsApp"
+  />
+
+</div>
       <div style={styles.puzzle} ref={puzzleRef}>
+
         <table style={styles.table}>
         <tbody>
           {/* Row 1 */}
@@ -664,44 +693,25 @@ const checkSolution = () => {
         <button style={styles.button} onClick={checkSolution}>Check Solution</button>
         <div style={{ ...styles.result, color: resultColor }}>{result}</div>
 
-        {showShareButtons && (
-          <div style={styles.shareButtons}>
-            <button 
-              style={{ ...styles.shareButton, backgroundColor: '#3b5998' }} 
-              onClick={() => shareOnSocialMedia('facebook')}
-            >
-              Share on Facebook
-            </button>
-            <button 
-              style={{ ...styles.shareButton, backgroundColor: '#1DA1F2' }} 
-              onClick={() => shareOnSocialMedia('twitter')}
-            >
-              Share on Twitter
-            </button>
-            <button 
-              style={{ ...styles.shareButton, backgroundColor: '#25D366' }} 
-              onClick={() => shareOnSocialMedia('whatsapp')}
-            >
-              Share on WhatsApp
-            </button>
-            <button 
-              style={{ ...styles.shareButton, backgroundColor: '#6c757d' }} 
-              onClick={copyToClipboard}
-            >
-              Copy Image
-            </button>
-          </div>
-        )}
 
         {/* Rules Section */}
-        <div id="rules">
+          <div id="rules" style={{ textAlign: 'left' }}>
           <h3>Rules:</h3>
-          <ul>
+          <ol style={{ listStyleType: 'decimal', paddingLeft: '1.5rem' }}>
             <li>Use BODMAS rule - left to right in rows and top to bottom in columns.</li>
             <li>Fill the blanks with single digits from 1 to 9 to complete the equations.</li>
             <li>Each digit can come only once in an equation of a row or column.</li>
             <li>All digits from 1 to 9 should come at least once in the overall square of 5 rows and 5 column equations.</li>
-          </ul>  
+          </ol>  
+        </div>
+          <div id="Hints" style={{ textAlign: 'left' }}>
+          <h3>Hints:</h3>
+            <ol style={{ listStyleType: 'decimal', paddingLeft: '1.5rem' }}>
+            <li> Use BODMAS rule to solve the equations- LEFT to RIGHT in rows and TOP to BOTTOM in columns.</li>
+            <li> First, we solve Division (/) or Multiplication (*) (whichever comes first from the left side of the expression), and then finally, Subtraction (-) or Addition (+), whichever comes on the left side.</li>
+              
+            E.g-  7*5+4/2-1 = 35+ 4 / 2 - 1 = 35 + 2 - 1 = 37 - 1 = 36
+          </ol>  
         </div>
       </div>
     </div>
