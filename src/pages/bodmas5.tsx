@@ -1,10 +1,25 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import html2canvas from 'html2canvas';
 import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
 import DifficultyLevel from '../components/difficultyProps';
+// import { puzzleConfigs } from '../components/puzzleConfigs';
+import { PuzzleConfig } from '../components/puzzleType';
 
-const BODMASPuzzle: React.FC = () => {
+interface BODMASPuzzleProps {
+  config: PuzzleConfig;
+}
+
+const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
   // Timer state
+    const computeInitialCellValues = (config: PuzzleConfig) => {
+    return config.grid.reduce((acc, row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        acc[`cell-${rowIndex + 1}-${colIndex + 1}`] = cell.fixed ? cell.value : '';
+      });
+      return acc;
+    }, {} as Record<string, string>);
+  };
+
   const [seconds, setSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(true);
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
@@ -13,30 +28,28 @@ const BODMASPuzzle: React.FC = () => {
   const [showShareButtons, setShowShareButtons] = useState(false);
   const puzzleRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout>();
-  const blanksLeft = 2; // dynamically count this from puzzle state
 
-  // Answers grid
-  const answers = [
-    [9, 3, 8, 7, 6],
-    [5, 9, 4, 2, 3],
-    [1, 6, 9, 3, 7],
-    [8, 4, 3, 1, 5],
-    [4, 2, 6, 5, 1]
-  ];
+  // Initialize cell values from config
+  const [cellValues, setCellValues] = useState<Record<string, string>>(
+    () => computeInitialCellValues(config)
+  );
 
-  // Cell values state
-  const initialCellValues = {
-    'cell-1-1': '9', 'cell-1-2': '3', 'cell-1-3': '8', 'cell-1-4': '', 'cell-1-5': '',
-    'cell-2-1': '', 'cell-2-2': '', 'cell-2-3': '4', 'cell-2-4': '2', 'cell-2-5': '3',
-    'cell-3-1': '1', 'cell-3-2': '', 'cell-3-3': '9', 'cell-3-4': '', 'cell-3-5': '7',
-    'cell-4-1': '', 'cell-4-2': '4', 'cell-4-3': '', 'cell-4-4': '1', 'cell-4-5': '5',
-    'cell-5-1': '4', 'cell-5-2': '2', 'cell-5-3': '', 'cell-5-4': '5', 'cell-5-5': ''
-  };
+  const blanksLeft = Object.values(cellValues).filter(v => v === '').length;
 
-  const [cellValues, setCellValues] = useState<Record<string, string>>(initialCellValues);
+    // Reset when config changes
+  useEffect(() => {
+    setCellValues(computeInitialCellValues(config));
+    setSeconds(0);
+    setIsTimerRunning(true);
+    setSelectedCell(null);
+    setResult('');
+    setShowShareButtons(false);
+  }, [config]);
+  
+
 
   // Timer effect
-   useEffect(() => {
+  useEffect(() => {
     if (isTimerRunning) {
       timerRef.current = setInterval(() => {
         setSeconds(prev => prev + 1);
@@ -52,6 +65,7 @@ const BODMASPuzzle: React.FC = () => {
     };
   }, [isTimerRunning]);
 
+
   // Format timer display
   const formatTime = (timeInSeconds: number): string => {
     const mins = String(Math.floor(timeInSeconds / 60)).padStart(2, '0');
@@ -59,11 +73,12 @@ const BODMASPuzzle: React.FC = () => {
     return `${mins}:${secs}`;
   };
 
-  // Check if number is allowed in the cell (no duplicates in row/column)
+  // Check if number is allowed in the cell
   const isNumberAllowed = useCallback((number: string, cellId: string): boolean => {
     const [_, row, col] = cellId.split('-').map(Number);
+    const size = config.grid.length;
 
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= size; i++) {
       const rowCellId = `cell-${row}-${i}`;
       const colCellId = `cell-${i}-${col}`;
       if (rowCellId !== cellId && cellValues[rowCellId] === number) return false;
@@ -71,7 +86,7 @@ const BODMASPuzzle: React.FC = () => {
     }
 
     return true;
-  }, [cellValues]);
+  }, [cellValues, config.grid.length]);
 
   // Handle cell selection
   const handleCellClick = (cellId: string) => {
@@ -102,7 +117,7 @@ const BODMASPuzzle: React.FC = () => {
       setCellValues(prev => ({ ...prev, [cellId]: value }));
     } else {
       alert("Number already used in this row or column");
-      e.target.value = cellValues[cellId]; // Reset to previous value
+      e.target.value = cellValues[cellId];
     }
   };
 
@@ -119,25 +134,28 @@ const BODMASPuzzle: React.FC = () => {
     setCellValues(initialCellValues);
     setResult('');
     setSeconds(0);
-    setIsTimerRunning(true); // Restart the timer
+    setIsTimerRunning(true);
     setSelectedCell(null);
     setShowShareButtons(false);
   };
 
   // Check solution
-const checkSolution = () => {
+  const checkSolution = () => {
+    const size = config.grid.length;
     let allFilled = true;
     const rowResults: boolean[] = [];
 
-    for (let row = 1; row <= 5; row++) {
+    for (let row = 1; row <= size; row++) {
       let rowCorrect = true;
-      for (let col = 1; col <= 5; col++) {
+      for (let col = 1; col <= size; col++) {
         const cellId = `cell-${row}-${col}`;
         const val = cellValues[cellId];
-        if (!initialCellValues[cellId] && val === "") {
+        
+        if (!config.grid[row-1][col-1].fixed && val === "") {
           allFilled = false;
         }
-        if (val && parseInt(val) !== answers[row - 1][col - 1]) {
+        
+        if (val && parseInt(val) !== config.answers[row - 1][col - 1]) {
           rowCorrect = false;
         }
       }
@@ -147,11 +165,11 @@ const checkSolution = () => {
     if (!allFilled) {
       setResult("Kindly fill all the blanks to check solution.");
       setResultColor("red");
-      setShowShareButtons(false);
+      setShowShareButtons(true);
     } else if (rowResults.every(Boolean)) {
       setResult("✅ Excellent, Challenge Completed Successfully!");
       setResultColor("green");
-      setIsTimerRunning(false); // This stops the timer
+      setIsTimerRunning(false);
       setShowShareButtons(true);
     } else {
       const summary = rowResults
@@ -251,7 +269,6 @@ const checkSolution = () => {
       fontSize: '18px',
       backgroundColor: '#007bff',
       color: 'white',
-
     },
     button: {
       padding: '8px 15px',
@@ -296,380 +313,96 @@ const checkSolution = () => {
     },
   };
 
-  return (
-    <div style={styles.body}>
+  const size = config.grid.length;
 
+  return (
+    <div style={styles.body} >
+      <h1 style={styles.h1}>BODMAS Puzzle Challenge</h1>
       <p>Fill the blanks with numbers 1 to 9 to complete the equations following the BODMAS rule.</p>
 
       <div style={styles.timerContainer}>
-
         <h3>⏱️ Time Elapsed: <span>{formatTime(seconds)}</span></h3>
       </div>
 
-<div className="flex gap-3 items-center justify-center">
-                <DifficultyLevel blanksLeft={blanksLeft} />
-
-  <FaFacebook
-    onClick={() => shareOnSocialMedia('facebook')}
-    className="text-blue-600 hover:text-blue-800 cursor-pointer text-2xl"
-    title="Share on Facebook"
-  />
-  <FaTwitter
-    onClick={() => shareOnSocialMedia('twitter')}
-    className="text-blue-400 hover:text-blue-600 cursor-pointer text-2xl"
-    title="Share on Twitter"
-  />
-  <FaWhatsapp
-    onClick={() => shareOnSocialMedia('whatsapp')}
-    className="text-green-500 hover:text-green-700 cursor-pointer text-2xl"
-    title="Share on WhatsApp"
-  />
-
-</div>
+      <div className="flex gap-3 items-center justify-center" style={{ width: 'fit-content', margin: 'auto' }}>
+        <DifficultyLevel blanksLeft={blanksLeft} />
+        <FaFacebook
+          onClick={() => shareOnSocialMedia('facebook')}
+          className="text-blue-600 hover:text-blue-800 cursor-pointer text-2xl"
+          title="Share on Facebook"
+        />
+        <FaTwitter
+          onClick={() => shareOnSocialMedia('twitter')}
+          className="text-blue-400 hover:text-blue-600 cursor-pointer text-2xl"
+          title="Share on Twitter"
+        />
+        <FaWhatsapp
+          onClick={() => shareOnSocialMedia('whatsapp')}
+          className="text-green-500 hover:text-green-700 cursor-pointer text-2xl"
+          title="Share on WhatsApp"
+        />
+      </div>
+      
       <div style={styles.puzzle} ref={puzzleRef}>
-
         <table style={styles.table}>
-        <tbody>
-          {/* Row 1 */}
-          <tr>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-1-1"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-1-1']}
-                disabled
-              />
-            </td>
-            <td>/</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-1-2"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-1-2']}
-                disabled
-              />
-            </td>
-            <td>*</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-1-3"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-1-3']}
-                disabled
-              />
-            </td>
-            <td>+</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-1-4"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-1-4' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-1-4']}
-                onChange={(e) => handleCellChange(e, 'cell-1-4')}
-                onClick={() => handleCellClick('cell-1-4')}
-              />
-            </td>
-            <td>-</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-1-5"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-1-5' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-1-5']}
-                onChange={(e) => handleCellChange(e, 'cell-1-5')}
-                onClick={() => handleCellClick('cell-1-5')}
-              />
-            </td>
-            <td>= 25</td>
-          </tr>
-          <tr>
-            <td>*</td>
-            <td></td>
-            <td>-</td>
-            <td></td>
-            <td>/</td>
-            <td></td>
-            <td>*</td>
-            <td></td>
-            <td>/</td>
-          </tr>
-          {/* Row 2 */}
-          <tr>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-2-1"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-2-1' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-2-1']}
-                onChange={(e) => handleCellChange(e, 'cell-2-1')}
-                onClick={() => handleCellClick('cell-2-1')}
-              />
-            </td>
-            <td>+</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-2-2"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-2-2' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-2-2']}
-                onChange={(e) => handleCellChange(e, 'cell-2-2')}
-                onClick={() => handleCellClick('cell-2-2')}
-              />
-            </td>
-            <td>-</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-2-3"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-2-3']}
-                disabled
-              />
-            </td>
-            <td>/</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-2-4"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-2-4']}
-                disabled
-              />
-            </td>
-            <td>*</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-2-5"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-2-5']}
-                disabled
-              />
-            </td>
-            <td>= 8</td>
-          </tr>
-          <tr>
-            <td>+</td>
-            <td></td>
-            <td>*</td>
-            <td></td>
-            <td>+</td>
-            <td></td>
-            <td>-</td>
-            <td></td>
-            <td>+</td>
-          </tr>
-          {/* Row 3 */}
-          <tr>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-3-1"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-3-1']}
-                disabled
-              />
-            </td>
-            <td>-</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-3-2"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-3-2' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-3-2']}
-                onChange={(e) => handleCellChange(e, 'cell-3-2')}
-                onClick={() => handleCellClick('cell-3-2')}
-              />
-            </td>
-            <td>+</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-3-3"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-3-3']}
-                disabled
-              />
-            </td>
-            <td>/</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-3-4"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-3-4' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-3-4']}
-                onChange={(e) => handleCellChange(e, 'cell-3-4')}
-                onClick={() => handleCellClick('cell-3-4')}
-              />
-            </td>
-            <td>*</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-3-5"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-3-5']}
-                disabled
-              />
-            </td>
-            <td>= 16</td>
-          </tr>
-          <tr>
-            <td>-</td>
-            <td></td>
-            <td>+</td>
-            <td></td>
-            <td>*</td>
-            <td></td>
-            <td>/</td>
-            <td></td>
-            <td>-</td>
-          </tr>
-          {/* Row 4 */}
-          <tr>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-4-1"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-4-1' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-4-1']}
-                onChange={(e) => handleCellChange(e, 'cell-4-1')}
-                onClick={() => handleCellClick('cell-4-1')}
-              />
-            </td>
-            <td>/</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-4-2"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-4-2']}
-                disabled
-              />
-            </td>
-            <td>+</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-4-3"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-4-3' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-4-3']}
-                onChange={(e) => handleCellChange(e, 'cell-4-3')}
-                onClick={() => handleCellClick('cell-4-3')}
-              />
-            </td>
-            <td>-</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-4-4"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-4-4']}
-                disabled
-              />
-            </td>
-            <td>*</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-4-5"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-4-5']}
-                disabled
-              />
-            </td>
-            <td>= 0</td>
-          </tr>
-          <tr>
-            <td>/</td>
-            <td></td>
-            <td>/</td>
-            <td></td>
-            <td>-</td>
-            <td></td>
-            <td>+</td>
-            <td></td>
-            <td>*</td>
-          </tr>
-          {/* Row 5 */}
-          <tr>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-5-1"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-5-1']}
-                disabled
-              />
-            </td>
-            <td>+</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-5-2"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-5-2']}
-                disabled
-              />
-            </td>
-            <td>-</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-5-3"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-5-3' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-5-3']}
-                onChange={(e) => handleCellChange(e, 'cell-5-3')}
-                onClick={() => handleCellClick('cell-5-3')}
-              />
-            </td>
-            <td>*</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-5-4"
-                style={{ ...styles.cell, ...styles.disabledCell }}
-                value={cellValues['cell-5-4']}
-                disabled
-              />
-            </td>
-            <td>/</td>
-            <td style={styles.td}>
-              <input
-                type="text"
-                id="cell-5-5"
-                className="cell"
-                style={{ ...styles.cell, ...(selectedCell === 'cell-5-5' ? styles.selectedCell : {}) }}
-                value={cellValues['cell-5-5']}
-                onChange={(e) => handleCellChange(e, 'cell-5-5')}
-                onClick={() => handleCellClick('cell-5-5')}
-              />
-            </td>
-            <td>= -24</td>
-          </tr>
-          <tr>
-            <td>= 44</td>
-            <td></td>
-            <td>= -49</td>
-            <td></td>
-            <td>= 23</td>
-            <td></td>
-            <td>= 16</td>
-            <td></td>
-            <td>= 4</td>
-          </tr>
+          <tbody>
+            {/* Render number rows */}
+            {config.grid.map((row, rowIndex) => (
+              <Fragment key={`row-${rowIndex}`}>
+                <tr>
+                  {row.map((cell, colIndex) => {
+                    const cellId = `cell-${rowIndex + 1}-${colIndex + 1}`;
+                    const isFixed = cell.fixed;
+                    
+                    return (
+                      <Fragment key={`cell-${rowIndex}-${colIndex}`}>
+                        <td style={styles.td}>
+                          <input
+                            type="text"
+                            id={cellId}
+                            style={{
+                              ...styles.cell,
+                              ...(isFixed ? styles.disabledCell : {}),
+                              ...(selectedCell === cellId ? styles.selectedCell : {})
+                            }}
+                            value={cellValues[cellId]}
+                            disabled={isFixed}
+                            onChange={!isFixed ? (e) => handleCellChange(e, cellId) : undefined}
+                            onClick={!isFixed ? () => handleCellClick(cellId) : undefined}
+                          />
+                        </td>
+                        {colIndex < row.length - 1 && (
+                          <td>{config.rowOperators[rowIndex][colIndex]}</td>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                  <td>= {config.rowTargets[rowIndex]}</td>
+                </tr>
+                
+                {/* Render operator rows between number rows */}
+                {rowIndex < size - 1 && (
+                  <tr>
+                    {config.colOperators[rowIndex].map((operator, colIndex) => (
+                      <Fragment key={`op-${rowIndex}-${colIndex}`}>
+                        <td>{operator}</td>
+                        {colIndex < size - 1 && <td></td>}
+                      </Fragment>
+                    ))}
+                  </tr>
+                )}
+              </Fragment>
+            ))}
+            
+            {/* Render column targets */}
+            <tr>
+              {config.colTargets.map((target, index) => (
+                <Fragment key={`col-target-${index}`}>
+                  <td>= {target}</td>
+                  {index < size - 1 && <td></td>}
+                </Fragment>
+              ))}
+            </tr>
           </tbody>
         </table>
 
@@ -693,24 +426,22 @@ const checkSolution = () => {
         <button style={styles.button} onClick={checkSolution}>Check Solution</button>
         <div style={{ ...styles.result, color: resultColor }}>{result}</div>
 
-
         {/* Rules Section */}
-          <div id="rules" style={{ textAlign: 'left' }}>
+        <div id="rules" style={{ textAlign: 'left' }}>
           <h3>Rules:</h3>
           <ol style={{ listStyleType: 'decimal', paddingLeft: '1.5rem' }}>
             <li>Use BODMAS rule - left to right in rows and top to bottom in columns.</li>
             <li>Fill the blanks with single digits from 1 to 9 to complete the equations.</li>
             <li>Each digit can come only once in an equation of a row or column.</li>
-            <li>All digits from 1 to 9 should come at least once in the overall square of 5 rows and 5 column equations.</li>
+            <li>All digits from 1 to 9 should come at least once in the overall square.</li>
           </ol>  
         </div>
-          <div id="Hints" style={{ textAlign: 'left' }}>
+        <div id="Hints" style={{ textAlign: 'left' }}>
           <h3>Hints:</h3>
-            <ol style={{ listStyleType: 'decimal', paddingLeft: '1.5rem' }}>
-            <li> Use BODMAS rule to solve the equations- LEFT to RIGHT in rows and TOP to BOTTOM in columns.</li>
-            <li> First, we solve Division (/) or Multiplication (*) (whichever comes first from the left side of the expression), and then finally, Subtraction (-) or Addition (+), whichever comes on the left side.</li>
-              
-            E.g-  7*5+4/2-1 = 35+ 4 / 2 - 1 = 35 + 2 - 1 = 37 - 1 = 36
+          <ol style={{ listStyleType: 'decimal', paddingLeft: '1.5rem' }}>
+            <li>Use BODMAS rule to solve equations: LEFT to RIGHT in rows, TOP to BOTTOM in columns.</li>
+            <li>First solve Division (/) or Multiplication (*) (whichever comes first from left), then Addition (+) or Subtraction (-).</li>
+            <li>Example: 7*5+4/2-1 = 35+4/2-1 = 35+2-1 = 37-1 = 36</li>
           </ol>  
         </div>
       </div>
