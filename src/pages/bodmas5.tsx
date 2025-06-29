@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import html2canvas from 'html2canvas';
-import { FaFacebook, FaTwitter, FaWhatsapp } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaWhatsapp, FaLinkedin } from 'react-icons/fa';
 import DifficultyLevel from '../components/difficultyProps';
 // import { puzzleConfigs } from '../components/puzzleConfigs';
 import { PuzzleConfig } from '../components/puzzleType';
@@ -8,6 +8,7 @@ import { PuzzleConfig } from '../components/puzzleType';
 interface BODMASPuzzleProps {
   config: PuzzleConfig;
 }
+const urlToShare='https://magicsq.vercel.app/'
 
 const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
   // Timer state
@@ -34,7 +35,8 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     () => computeInitialCellValues(config)
   );
 
-  const blanksLeft = Object.values(cellValues).filter(v => v === '').length;
+  // const blanksLeft = Object.values(cellValues).filter(v => v === '').length;
+  const blanksLeft = config.difficulty;
 
     // Reset when config changes
   useEffect(() => {
@@ -192,11 +194,14 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
       const message = `I solved the BODMAS Puzzle in ${timeTaken}! Can you beat my time?`;
 
       if (platform === 'facebook') {
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(image)}&quote=${encodeURIComponent(message)}`, '_blank');
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}&quote=${encodeURIComponent(message)}`, '_blank');
       } else if (platform === 'twitter') {
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(image)}`, '_blank');
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(urlToShare)}`, '_blank');
       } else if (platform === 'whatsapp') {
-        window.open(`https://wa.me/?text=${encodeURIComponent(`${message} ${image}`)}`, '_blank');
+        window.open(`https://wa.me/?text=${encodeURIComponent(`${message} ${urlToShare}`)}`,'_blank'  );
+      }
+      else if (platform === 'linkedin') {
+        window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(urlToShare)}&title=${encodeURIComponent(message)}`, '_blank');
       }
     } catch (error) {
       console.error('Error sharing:', error);
@@ -341,6 +346,12 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
           className="text-green-500 hover:text-green-700 cursor-pointer text-2xl"
           title="Share on WhatsApp"
         />
+      <FaLinkedin
+          onClick={() => shareOnSocialMedia('linkedin')}
+          className="text-blue-600 hover:text-blue-800 cursor-pointer text-2xl"
+          title="Share on LinkedIn"
+        />
+        
       </div>
       
       <div style={styles.puzzle} ref={puzzleRef}>
