@@ -191,7 +191,7 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
       const canvas = await html2canvas(puzzleRef.current);
       const image = canvas.toDataURL('image/png');
       const timeTaken = formatTime(seconds);
-      const message = `I solved the BODMAS Puzzle in ${timeTaken}! Can you beat my time?`;
+      const message = `I solved the Magic Square Challenge in ${timeTaken}! Can you beat my time?`;
 
       if (platform === 'facebook') {
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}&quote=${encodeURIComponent(message)}`, '_blank');
