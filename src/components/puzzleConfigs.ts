@@ -56,7 +56,7 @@ export const puzzleConfigs: PuzzleConfig[] = [
       ['-', '+', '*', '/', '-'],
       ['/', '/', '-', '+', '*']
     ],
-    rowTargets: [37, 8, 16, 0, -24],
+    rowTargets: [25, 8, 16, 0, -24],
     colTargets: [44, -49, 23, 16, 4],
     answers: [
       [9, 3, 8, 7, 6],
