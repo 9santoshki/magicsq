@@ -133,12 +133,12 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
 
   // Handle reset
   const handleReset = () => {
-    setCellValues(initialCellValues);
+    setCellValues(computeInitialCellValues(config)); 
     setResult('');
-    setSeconds(0);
-    setIsTimerRunning(true);
-    setSelectedCell(null);
     setShowShareButtons(false);
+    setSeconds(0); 
+    setIsTimerRunning(true); 
+    setSelectedCell(null);
   };
 
   // Check solution
