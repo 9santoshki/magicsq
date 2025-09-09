@@ -1,18 +1,30 @@
 import React, { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import html2canvas from 'html2canvas';
-import { FaFacebook, FaTwitter, FaWhatsapp, FaLinkedin } from 'react-icons/fa';
+import { FaFacebook, FaTwitter, FaWhatsapp, FaLinkedin, FaClock, FaCalculator, FaLightbulb, FaBook, FaExclamationTriangle } from 'react-icons/fa';
+import { MdRefresh, MdDelete, MdCheck, MdWarning, MdInfo } from 'react-icons/md';
 import DifficultyLevel from '../components/difficultyProps';
-// import { puzzleConfigs } from '../components/puzzleConfigs';
+import { puzzleConfigs } from '../components/puzzleConfigs'; // Import the 20 puzzle configs
 import { PuzzleConfig } from '../components/puzzleType';
 
-interface BODMASPuzzleProps {
-  config: PuzzleConfig;
-}
-const urlToShare='https://magicsquare.live/'
+const urlToShare = 'https://magicsquare.live/';
 
-const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
+// Function to get daily puzzle based on current date
+const getDailyPuzzle = (): PuzzleConfig => {
+  const today = new Date();
+  const startOfYear = new Date(today.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Use modulo to cycle through the 20 puzzles
+  const puzzleIndex = dayOfYear % puzzleConfigs.length;
+  return puzzleConfigs[puzzleIndex];
+};
+
+const BODMASPuzzle: React.FC = () => {
+  // Get today's puzzle
+  const [config] = useState<PuzzleConfig>(() => getDailyPuzzle());
+  
   // Timer state
-    const computeInitialCellValues = (config: PuzzleConfig) => {
+  const computeInitialCellValues = (config: PuzzleConfig) => {
     return config.grid.reduce((acc, row, rowIndex) => {
       row.forEach((cell, colIndex) => {
         acc[`cell-${rowIndex + 1}-${colIndex + 1}`] = cell.fixed ? cell.value : '';
@@ -27,6 +39,10 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
   const [result, setResult] = useState('');
   const [resultColor, setResultColor] = useState('black');
   const [showShareButtons, setShowShareButtons] = useState(false);
+  const [isPuzzleCompleted, setIsPuzzleCompleted] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [showHints, setShowHints] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
   const puzzleRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout>();
 
@@ -35,10 +51,15 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     () => computeInitialCellValues(config)
   );
 
-  // const blanksLeft = Object.values(cellValues).filter(v => v === '').length;
   const blanksLeft = config.difficulty;
 
-    // Reset when config changes
+  // Show warning message
+  const showWarning = (message: string) => {
+    setWarningMessage(message);
+    setTimeout(() => setWarningMessage(''), 3000);
+  };
+
+  // Reset when config changes
   useEffect(() => {
     setCellValues(computeInitialCellValues(config));
     setSeconds(0);
@@ -46,9 +67,9 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     setSelectedCell(null);
     setResult('');
     setShowShareButtons(false);
+    setIsPuzzleCompleted(false);
+    setWarningMessage('');
   }, [config]);
-  
-
 
   // Timer effect
   useEffect(() => {
@@ -67,12 +88,22 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     };
   }, [isTimerRunning]);
 
-
   // Format timer display
   const formatTime = (timeInSeconds: number): string => {
     const mins = String(Math.floor(timeInSeconds / 60)).padStart(2, '0');
     const secs = String(timeInSeconds % 60).padStart(2, '0');
     return `${mins}:${secs}`;
+  };
+
+  // Get current date string for display
+  const getCurrentDateString = (): string => {
+    const today = new Date();
+    return today.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
 
   // Check if number is allowed in the cell
@@ -97,13 +128,16 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
 
   // Handle number button click
   const handleNumberClick = (number: string) => {
-    if (selectedCell) {
-      if (isNumberAllowed(number, selectedCell)) {
-        setCellValues(prev => ({ ...prev, [selectedCell]: number }));
-        setSelectedCell(null);
-      } else {
-        alert("Number already used in this row or column");
-      }
+    if (!selectedCell) {
+      showWarning('Please select a cell first');
+      return;
+    }
+    
+    if (isNumberAllowed(number, selectedCell)) {
+      setCellValues(prev => ({ ...prev, [selectedCell]: number }));
+      setSelectedCell(null);
+    } else {
+      showWarning(`Number ${number} already exists in this row or column`);
     }
   };
 
@@ -111,14 +145,17 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
   const handleCellChange = (e: React.ChangeEvent<HTMLInputElement>, cellId: string) => {
     const value = e.target.value;
     
+    // Check for invalid characters
     if (!/^[1-9]?$/.test(value)) {
+      showWarning('Only digits 1-9 are permitted');
+      e.target.value = cellValues[cellId];
       return;
     }
 
     if (value === '' || isNumberAllowed(value, cellId)) {
       setCellValues(prev => ({ ...prev, [cellId]: value }));
     } else {
-      alert("Number already used in this row or column");
+      showWarning(`Number ${value} already exists in this row or column`);
       e.target.value = cellValues[cellId];
     }
   };
@@ -128,6 +165,8 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     if (selectedCell) {
       setCellValues(prev => ({ ...prev, [selectedCell]: '' }));
       setSelectedCell(null);
+    } else {
+      showWarning('Please select a cell to clear');
     }
   };
 
@@ -136,9 +175,11 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     setCellValues(computeInitialCellValues(config)); 
     setResult('');
     setShowShareButtons(false);
+    setIsPuzzleCompleted(false);
     setSeconds(0); 
     setIsTimerRunning(true); 
     setSelectedCell(null);
+    setWarningMessage('');
   };
 
   // Check solution
@@ -165,20 +206,21 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     }
 
     if (!allFilled) {
-      setResult("Kindly fill all the blanks to check solution.");
-      setResultColor("red");
+      setResult("Please complete all fields to validate your solution");
+      setResultColor("#e74c3c");
       setShowShareButtons(true);
     } else if (rowResults.every(Boolean)) {
-      setResult("✅ Excellent, Challenge Completed Successfully!");
-      setResultColor("green");
+      setResult("✓ Excellent! Challenge completed successfully");
+      setResultColor("#27ae60");
       setIsTimerRunning(false);
+      setIsPuzzleCompleted(true);
       setShowShareButtons(true);
     } else {
       const summary = rowResults
-        .map((correct, i) => `Row ${i + 1} is ${correct ? "correct" : "incorrect"}`)
-        .join(", ") + ", Try Again!";
+        .map((correct, i) => `Row ${i + 1}: ${correct ? "✓" : "✗"}`)
+        .join(" • ") + " • Please review and try again";
       setResult(summary);
-      setResultColor("orange");
+      setResultColor("#f39c12");
       setShowShareButtons(true);
     }
   };
@@ -190,8 +232,15 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     try {
       const canvas = await html2canvas(puzzleRef.current);
       const image = canvas.toDataURL('image/png');
-      const timeTaken = formatTime(seconds);
-      const message = `I solved the Magic Square Challenge in ${timeTaken}! Can you beat my time?`;
+      const dateString = getCurrentDateString();
+      
+      let message: string;
+      if (isPuzzleCompleted) {
+        const timeTaken = formatTime(seconds);
+        message = `I solved today's Challenge (${dateString}) in ${timeTaken}! Can you beat my time?`;
+      } else {
+        message = `Check out today's Challenge (${dateString})! Test your mathematical skills.`;
+      }
 
       if (platform === 'facebook') {
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}&quote=${encodeURIComponent(message)}`, '_blank');
@@ -208,256 +257,644 @@ const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
     }
   };
 
-  // Copy to clipboard
-  const copyToClipboard = async () => {
-    if (!puzzleRef.current) return;
-
-    try {
-      const canvas = await html2canvas(puzzleRef.current);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const item = new ClipboardItem({ 'image/png': blob });
-          navigator.clipboard.write([item]).then(() => {
-            alert('Image copied to clipboard!');
-          });
-        }
-      });
-    } catch (error) {
-      console.error('Error copying:', error);
-      alert('Failed to copy image to clipboard');
-    }
-  };
-
-  // Styles
-  const styles = {
-    body: {
-      fontFamily: 'Arial, sans-serif',
-      textAlign: 'center' as const,
-      backgroundColor: '#f5f5f5',
-    },
-    h1: {
-      color: 'darkblue',
-    },
-    puzzle: {
-      margin: 'auto',
-      padding: '20px',
-      width: 'fit-content',
-      background: '#fff',
-      borderRadius: '10px',
-      boxShadow: '0 0 10px #ccc',
-    },
-    table: {
-      borderCollapse: 'collapse' as const,
-      margin: '10px auto',
-    },
-    td: {
-      padding: '5px',
-    },
-    cell: {
-      width: '40px',
-      height: '30px',
-      textAlign: 'center' as const,
-      fontSize: '18px',
-      border: '1px solid #333',
-      borderRadius: '5px',
-    },
-    disabledCell: {
-      backgroundColor: '#ddd',
-    },
-    controls: {
-      marginTop: '20px',
-    },
-    numBtn: {
-      width: '40px',
-      height: '40px',
-      margin: '5px',
-      fontSize: '18px',
-      backgroundColor: '#007bff',
-      color: 'white',
-    },
-    button: {
-      padding: '8px 15px',
-      margin: '10px',
-      fontSize: '16px',
-      cursor: 'pointer',
-      borderRadius: '5px',
-      border: 'none',
-      backgroundColor: '#007bff',
-      color: 'white',
-    },
-    shareButton: {
-      padding: '8px 15px',
-      margin: '5px',
-      fontSize: '16px',
-      cursor: 'pointer',
-      borderRadius: '5px',
-      border: 'none',
-      color: 'white',
-    },
-    buttonHover: {
-      backgroundColor: '#0056b3',
-    },
-    result: {
-      marginTop: '15px',
-      fontWeight: 'bold' as const,
-      fontSize: '18px',
-    },
-    timerContainer: {
-      margin: '10px',
-      fontSize: '20px',
-      color: '#333',
-    },
-    selectedCell: {
-      backgroundColor: '#ffffcc',
-    },
-    shareButtons: {
-      margin: '20px 0',
-      display: 'flex',
-      justifyContent: 'center',
-      flexWrap: 'wrap' as const,
-    },
-  };
-
   const size = config.grid.length;
 
   return (
-    <div style={styles.body} >
-      <h1 style={styles.h1}>BODMAS Puzzle Challenge</h1>
-      <p>Fill the blanks with numbers 1 to 9 to complete the equations following the BODMAS rule.</p>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%)',
+      fontFamily: "'Segoe UI', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif",
+      padding: '15px 10px',
+    }}>
+      {/* Warning Message */}
+      {warningMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#dc3545',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '6px',
+          zIndex: 1000,
+          fontWeight: '500',
+          fontSize: '0.85rem',
+          boxShadow: '0 4px 16px rgba(220, 53, 69, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          animation: 'slideDown 0.3s ease-out',
+          maxWidth: '90vw',
+          textAlign: 'center',
+        }}>
+          <MdWarning />
+          {warningMessage}
+        </div>
+      )}
 
-      <div style={styles.timerContainer}>
-        <h3>⏱️ Time Elapsed: <span>{formatTime(seconds)}</span></h3>
+      {/* Header */}
+      <div style={{
+        textAlign: 'center',
+        marginBottom: '20px',
+        color: '#495057',
+        padding: '0 10px',
+      }}>
+        <h1 style={{
+          fontSize: 'clamp(1.5rem, 5vw, 2.2rem)',
+          fontWeight: '400',
+          margin: '0 0 8px 0',
+          letterSpacing: '0.3px',
+          color: '#343a40',
+        }}>
+          Daily Challenge
+        </h1>
+        <p style={{
+          fontSize: 'clamp(0.9rem, 3vw, 1rem)',
+          opacity: 0.8,
+          margin: '0',
+          fontWeight: '400',
+          letterSpacing: '0.2px',
+        }}>
+          Daily Mathematical Puzzle
+        </p>
       </div>
 
-      <div className="flex gap-3 items-center justify-center" style={{ width: 'fit-content', margin: 'auto' }}>
-        <DifficultyLevel blanksLeft={blanksLeft} />
-        <FaFacebook
-          onClick={() => shareOnSocialMedia('facebook')}
-          className="text-blue-600 hover:text-blue-800 cursor-pointer text-2xl"
-          title="Share on Facebook"
-        />
-        <FaTwitter
-          onClick={() => shareOnSocialMedia('twitter')}
-          className="text-blue-400 hover:text-blue-600 cursor-pointer text-2xl"
-          title="Share on Twitter"
-        />
-        <FaWhatsapp
-          onClick={() => shareOnSocialMedia('whatsapp')}
-          className="text-green-500 hover:text-green-700 cursor-pointer text-2xl"
-          title="Share on WhatsApp"
-        />
-      <FaLinkedin
-          onClick={() => shareOnSocialMedia('linkedin')}
-          className="text-blue-600 hover:text-blue-800 cursor-pointer text-2xl"
-          title="Share on LinkedIn"
-        />
-        
-      </div>
-      
-      <div style={styles.puzzle} ref={puzzleRef}>
-        <table style={styles.table}>
-          <tbody>
-            {/* Render number rows */}
-            {config.grid.map((row, rowIndex) => (
-              <Fragment key={`row-${rowIndex}`}>
-                <tr>
-                  {row.map((cell, colIndex) => {
-                    const cellId = `cell-${rowIndex + 1}-${colIndex + 1}`;
-                    const isFixed = cell.fixed;
-                    
-                    return (
-                      <Fragment key={`cell-${rowIndex}-${colIndex}`}>
-                        <td style={styles.td}>
-                          <input
-                            type="text"
-                            id={cellId}
-                            style={{
-                              ...styles.cell,
-                              ...(isFixed ? styles.disabledCell : {}),
-                              ...(selectedCell === cellId ? styles.selectedCell : {})
-                            }}
-                            value={cellValues[cellId]}
-                            disabled={isFixed}
-                            onChange={!isFixed ? (e) => handleCellChange(e, cellId) : undefined}
-                            onClick={!isFixed ? () => handleCellClick(cellId) : undefined}
-                          />
-                        </td>
-                        {colIndex < row.length - 1 && (
-                          <td>{config.rowOperators[rowIndex][colIndex]}</td>
-                        )}
-                      </Fragment>
-                    );
-                  })}
-                  <td>= {config.rowTargets[rowIndex]}</td>
-                </tr>
-                
-                {/* Render operator rows between number rows */}
-                {rowIndex < size - 1 && (
-                  <tr>
-                    {config.colOperators[rowIndex].map((operator, colIndex) => (
-                      <Fragment key={`op-${rowIndex}-${colIndex}`}>
-                        <td>{operator}</td>
-                        {colIndex < size - 1 && <td></td>}
-                      </Fragment>
-                    ))}
-                  </tr>
-                )}
-              </Fragment>
-            ))}
+      {/* Main Game Container */}
+      <div style={{
+        maxWidth: '600px',
+        margin: '0 auto',
+        background: '#ffffff',
+        borderRadius: '12px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        overflow: 'hidden',
+        border: '1px solid #e9ecef',
+      }}>
+        {/* Game Header */}
+        <div style={{
+          background:  'linear-gradient(135deg, #1877F2 30%, #8B9DC3 100%)',//'#1877F2',
+          padding: '15px',
+          color: 'white',
+        }}>
+          {/* Timer and Difficulty */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '15px',
+            flexWrap: 'wrap',
+            gap: '10px',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(255,255,255,0.15)',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              fontSize: 'clamp(0.9rem, 3vw, 1rem)',
+              fontWeight: '500',
+            }}>
+              <FaClock style={{ fontSize: '0.9rem' }} />
+              <span style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
+                {formatTime(seconds)}
+              </span>
+            </div>
             
-            {/* Render column targets */}
-            <tr>
-              {config.colTargets.map((target, index) => (
-                <Fragment key={`col-target-${index}`}>
-                  <td>= {target}</td>
-                  {index < size - 1 && <td></td>}
-                </Fragment>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-
-        <div style={styles.controls}>
-          <h3>Number Selection</h3>
-          <div className="numbers">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-              <button
-                key={num}
-                style={styles.numBtn}
-                onClick={() => handleNumberClick(num.toString())}
-              >
-                {num}
-              </button>
+            <DifficultyLevel blanksLeft={blanksLeft} />
+          </div>
+          
+          {/* Social Share */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '10px',
+            flexWrap: 'wrap',
+          }}>
+            {[
+              { icon: FaFacebook, color: '#1877f2', platform: 'facebook' },
+              { icon: FaTwitter, color: '#1da1f2', platform: 'twitter' },
+              { icon: FaWhatsapp, color: '#25d366', platform: 'whatsapp' },
+              { icon: FaLinkedin, color: '#0077b5', platform: 'linkedin' }
+            ].map(({ icon: Icon, color, platform }) => (
+              <Icon
+                key={platform}
+                onClick={() => shareOnSocialMedia(platform)}
+                style={{
+                  fontSize: '1.1rem',
+                  cursor: 'pointer',
+                  color,
+                  background: 'white',
+                  borderRadius: '50%',
+                  padding: '8px',
+                  width: '34px',
+                  height: '34px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                }}
+                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              />
             ))}
           </div>
-          <button style={styles.button} onClick={handleDelete}>Delete</button>
-          <button style={styles.button} onClick={handleReset}>Reset</button>
         </div>
 
-        <button style={styles.button} onClick={checkSolution}>Check Solution</button>
-        <div style={{ ...styles.result, color: resultColor }}>{result}</div>
+        {/* Game Board */}
+        <div style={{ padding: '20px' }} ref={puzzleRef}>
+          {/* Puzzle Grid */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '8px',
+            padding: '15px',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+            marginBottom: '15px',
+            border: '1px solid #f1f3f4',
+          }}>
+            <table style={{
+              borderCollapse: 'collapse',
+              margin: '0 auto',
+              fontSize: 'clamp(0.8rem, 3vw, 1rem)',
+            }}>
+              <tbody>
+                {config.grid.map((row, rowIndex) => (
+                  <Fragment key={`row-${rowIndex}`}>
+                    <tr>
+                      {row.map((cell, colIndex) => {
+                        const cellId = `cell-${rowIndex + 1}-${colIndex + 1}`;
+                        const isFixed = cell.fixed;
+                        
+                        return (
+                          <Fragment key={`cell-${rowIndex}-${colIndex}`}>
+                            <td style={{ padding: '4px' }}>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[1-9]"
+                                id={cellId}
+                                style={{
+                                  width: 'clamp(35px, 8vw, 45px)',
+                                  height: 'clamp(35px, 8vw, 45px)',
+                                  textAlign: 'center',
+                                  fontSize: 'clamp(1rem, 4vw, 1.3rem)',
+                                  fontWeight: '500',
+                                  border: isFixed ? '1px solid #dee2e6' : 
+                                    selectedCell === cellId ? '2px solid #6c757d' : '1px solid #e9ecef',
+                                  borderRadius: '6px',
+                                  background: isFixed ? '#f8f9fa' : 
+                                    selectedCell === cellId ? '#f1f3f4' : '#ffffff',
+                                  color: isFixed ? '#6c757d' : '#495057',
+                                  transition: 'all 0.2s ease',
+                                  cursor: isFixed ? 'not-allowed' : 'pointer',
+                                  boxShadow: selectedCell === cellId ? 
+                                    '0 0 0 2px rgba(108, 117, 125, 0.2)' : 
+                                    '0 1px 3px rgba(0,0,0,0.05)',
+                                  fontFamily: 'inherit',
+                                }}
+                                value={cellValues[cellId]}
+                                disabled={isFixed}
+                                onChange={!isFixed ? (e) => handleCellChange(e, cellId) : undefined}
+                                onClick={!isFixed ? () => handleCellClick(cellId) : undefined}
+                                onFocus={!isFixed ? () => setSelectedCell(cellId) : undefined}
+                              />
+                            </td>
+                            {colIndex < row.length - 1 && (
+                              <td style={{
+                                padding: '4px',
+                                fontSize: 'clamp(1rem, 4vw, 1.2rem)',
+                                fontWeight: '500',
+                                color: '#495057',
+                                textAlign: 'center',
+                                minWidth: '20px',
+                              }}>
+                                {config.rowOperators[rowIndex][colIndex]}
+                              </td>
+                            )}
+                          </Fragment>
+                        );
+                      })}
+                      <td style={{
+                        padding: '4px 8px',
+                        fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
+                        fontWeight: '500',
+                        color: '#198754',
+                        background: '#f8fff9',
+                        borderRadius: '6px',
+                        whiteSpace: 'nowrap',
+                        border: '1px solid #d1e7dd',
+                      }}>
+                        = {config.rowTargets[rowIndex]}
+                      </td>
+                    </tr>
+                    
+                    {rowIndex < size - 1 && (
+                      <tr>
+                        {config.colOperators[rowIndex].map((operator, colIndex) => (
+                          <Fragment key={`op-${rowIndex}-${colIndex}`}>
+                            <td style={{
+                              padding: '4px',
+                              fontSize: 'clamp(1rem, 4vw, 1.2rem)',
+                              fontWeight: '500',
+                              color: '#495057',
+                              textAlign: 'center',
+                            }}>
+                              {operator}
+                            </td>
+                            {colIndex < size - 1 && <td style={{ padding: '4px' }}></td>}
+                          </Fragment>
+                        ))}
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+                
+                <tr>
+                  {config.colTargets.map((target, index) => (
+                    <Fragment key={`col-target-${index}`}>
+                      <td style={{
+                        padding: '4px',
+                        fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
+                        fontWeight: '500',
+                        color: '#198754',
+                        background: '#f8fff9',
+                        borderRadius: '6px',
+                        textAlign: 'center',
+                        border: '1px solid #d1e7dd',
+                      }}>
+                        = {target}
+                      </td>
+                      {index < size - 1 && <td style={{ padding: '4px' }}></td>}
+                    </Fragment>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-        {/* Rules Section */}
-        <div id="rules" style={{ textAlign: 'left' }}>
-          <h3>Rules:</h3>
-          <ol style={{ listStyleType: 'decimal', paddingLeft: '1.5rem' }}>
-            <li>Use BODMAS rule - left to right in rows and top to bottom in columns.</li>
-            <li>Fill the blanks with single digits from 1 to 9 to complete the equations.</li>
-            <li>Each digit can come only once in an equation of a row or column.</li>
-            <li>All digits from 1 to 9 should come at least once in the overall square.</li>
-          </ol>  
-        </div>
-        <div id="Hints" style={{ textAlign: 'left' }}>
-          <h3>Hints:</h3>
-          <ol style={{ listStyleType: 'decimal', paddingLeft: '1.5rem' }}>
-            <li>Use BODMAS rule to solve equations: LEFT to RIGHT in rows, TOP to BOTTOM in columns.</li>
-            <li>First solve Division (/) or Multiplication (*) (whichever comes first from left), then Addition (+) or Subtraction (-).</li>
-            <li>Example: 7*5+4/2-1 = 35+4/2-1 = 35+2-1 = 37-1 = 36</li>
-          </ol>  
+          {/* Number Pad - Minimal Design */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+            marginBottom: '15px',
+            border: '1px solid #f1f3f4',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '8px',
+              gap: '6px',
+            }}>
+              <FaCalculator style={{ 
+                color: '#6c757d', 
+                fontSize: '0.9rem' 
+              }} />
+              <h3 style={{
+                margin: '0',
+                color: '#495057',
+                fontSize: '0.85rem',
+                fontWeight: '500',
+                letterSpacing: '0.2px',
+              }}>
+                Input Panel
+              </h3>
+            </div>
+            
+            {/* Number Grid */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '4px',
+              marginBottom: '8px',
+              flexWrap: 'wrap',
+            }}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                <button
+                  key={num}
+                  onClick={() => handleNumberClick(num.toString())}
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                    background: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 4px rgba(108, 117, 125, 0.2)',
+                    touchAction: 'manipulation',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#5a6268';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#6c757d';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                  onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                  onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+            
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '6px',
+            }}>
+              <button
+                onClick={handleDelete}
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.7rem',
+                  fontWeight: '500',
+                  background: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2px',
+                  touchAction: 'manipulation',
+                  height: '24px',
+                  minWidth: '50px',
+                  boxShadow: '0 1px 4px rgba(220, 53, 69, 0.2)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#c82333';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#dc3545';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <MdDelete style={{ fontSize: '0.8rem' }} /> Clear
+              </button>
+              
+              <button
+                onClick={handleReset}
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.7rem',
+                  fontWeight: '500',
+                  background: '#fd7e14',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2px',
+                  touchAction: 'manipulation',
+                  height: '24px',
+                  minWidth: '50px',
+                  boxShadow: '0 1px 4px rgba(253, 126, 20, 0.2)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#e55a00';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#fd7e14';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <MdRefresh style={{ fontSize: '0.8rem' }} /> Reset
+              </button>
+              
+              <button
+                onClick={checkSolution}
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.7rem',
+                  fontWeight: '500',
+                  background: '#198754',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '2px',
+                  touchAction: 'manipulation',
+                  height: '24px',
+                  minWidth: '60px',
+                  boxShadow: '0 1px 4px rgba(25, 135, 84, 0.2)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#146c43';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#198754';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <MdCheck style={{ fontSize: '0.8rem' }} /> Check
+              </button>
+            </div>
+          </div>
+
+          {/* Result Display */}
+          {result && (
+            <div style={{
+              background: '#ffffff',
+              borderRadius: '8px',
+              padding: '15px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+              marginBottom: '15px',
+              textAlign: 'center',
+              border: `1px solid ${resultColor}`,
+              maxWidth: '500px',
+              margin: '0 auto 15px auto',
+            }}>
+              <div style={{
+                fontSize: 'clamp(0.9rem, 4vw, 1rem)',
+                fontWeight: '500',
+                color: resultColor,
+                lineHeight: '1.4',
+                letterSpacing: '0.1px',
+              }}>
+                {result}
+              </div>
+            </div>
+          )}
+
+          {/* Rules and Hints */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            maxWidth: '500px',
+            margin: '0 auto',
+          }}>
+            {/* Rules */}
+            <div style={{
+              background: '#ffffff',
+              borderRadius: '8px',
+              padding: '15px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+              border: '1px solid #f1f3f4',
+            }}>
+              <h3 style={{
+                margin: '0 0 10px 0',
+                color: '#495057',
+                fontSize: 'clamp(0.9rem, 4vw, 1rem)',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                letterSpacing: '0.2px',
+              }}
+              onClick={() => setShowRules(!showRules)}>
+                <FaBook style={{ color: '#6c757d', fontSize: '0.9rem' }} />
+                Game Rules {showRules ? '▼' : '▶'}
+              </h3>
+              {showRules && (
+                <ol style={{
+                  listStyleType: 'decimal',
+                  paddingLeft: '1.2rem',
+                  lineHeight: '1.5',
+                  color: '#6c757d',
+                  fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
+                  margin: '0',
+                }}>
+                  <li>Apply BODMAS rule: evaluate left to right in rows, top to bottom in columns</li>
+                  <li>Fill empty cells with digits 1-9 to complete all equations</li>
+                  <li>Each digit may appear only once per row or column equation</li>
+                  <li>All digits 1-9 must be used at least once in the complete grid</li>
+                </ol>
+              )}
+            </div>
+
+            {/* Hints */}
+            <div style={{
+              background: '#ffffff',
+              borderRadius: '8px',
+              padding: '15px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+              border: '1px solid #f1f3f4',
+            }}>
+              <h3 style={{
+                margin: '0 0 10px 0',
+                color: '#495057',
+                fontSize: 'clamp(0.9rem, 4vw, 1rem)',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                letterSpacing: '0.2px',
+              }}
+              onClick={() => setShowHints(!showHints)}>
+                <FaLightbulb style={{ color: '#fd7e14', fontSize: '0.9rem' }} />
+                Strategy Tips {showHints ? '▼' : '▶'}
+              </h3>
+              {showHints && (
+                <ol style={{
+                  listStyleType: 'decimal',
+                  paddingLeft: '1.2rem',
+                  lineHeight: '1.5',
+                  color: '#6c757d',
+                  fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
+                  margin: '0',
+                }}>
+                  <li>Follow BODMAS order: Division/Multiplication first, then Addition/Subtraction</li>
+                  <li>Process operations sequentially from left to right (rows) or top to bottom (columns)</li>
+                  <li>Example calculation: 7×5+4÷2-1 = 35+2-1 = 36</li>
+                </ol>
+              )}
+            </div>
+          </div>
+
+          {/* Daily Challenge Info */}
+          <div style={{
+            background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+            borderRadius: '8px',
+            padding: '15px',
+            marginTop: '20px',
+            color: 'white',
+            textAlign: 'center',
+            maxWidth: '500px',
+            margin: '20px auto 0 auto',
+            boxShadow: '0 2px 12px rgba(108, 117, 125, 0.2)',
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              marginBottom: '6px',
+            }}>
+              <MdInfo style={{ fontSize: '1rem' }} />
+              <h3 style={{
+                margin: '0',
+                fontSize: 'clamp(1rem, 4vw, 1.1rem)',
+                fontWeight: '500',
+                letterSpacing: '0.2px',
+              }}>
+                Daily Challenge
+              </h3>
+            </div>
+            <p style={{
+              margin: '0',
+              fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
+              opacity: 0.9,
+              lineHeight: '1.4',
+              letterSpacing: '0.1px',
+            }}>
+              New puzzle available daily. Return tomorrow for your next mathematical challenge.
+            </p>
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes slideDown {
+          from {
+            transform: translate(-50%, -100%);
+            opacity: 0;
+          }
+          to {
+            transform: translate(-50%, 0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 };
 
 export default BODMASPuzzle;
+

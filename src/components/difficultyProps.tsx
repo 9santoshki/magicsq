@@ -12,7 +12,7 @@ const DifficultyLevel: React.FC<DifficultyProps> = ({ blanksLeft }) => {
 
   return (
     <div className="right-4 flex items-center gap-0">
-      <span className="text-sm text-gray-700">Difficulty:</span>
+      <span className="text-sm text-black-700">Difficulty:</span>
       {fullStars.map((icon, i) => (
         <span key={`full-${i}`}>{icon}</span>
       ))}
