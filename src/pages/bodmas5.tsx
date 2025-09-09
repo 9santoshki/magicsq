@@ -8,7 +8,7 @@ import { PuzzleConfig } from '../components/puzzleType';
 interface BODMASPuzzleProps {
   config: PuzzleConfig;
 }
-const urlToShare='https://magicsq.vercel.app/'
+const urlToShare='https://magicsquare.live/'
 
 const BODMASPuzzle: React.FC<BODMASPuzzleProps> = ({ config }) => {
   // Timer state
