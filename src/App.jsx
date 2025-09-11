@@ -8,6 +8,8 @@ import Contact from './pages/contact';
 // import Generate from './pages/Generate';
 import { puzzleConfigs } from './components/puzzleConfigs';
 
+
+
 const App = () => {
   const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(0);
   const currentConfig = puzzleConfigs[currentPuzzleIndex];
