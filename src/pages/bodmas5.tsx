@@ -14,8 +14,8 @@ const getDailyPuzzle = (): PuzzleConfig => {
   const startOfYear = new Date(today.getFullYear(), 0, 1);
   const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Use modulo to cycle through the 20 puzzles
-  const puzzleIndex = dayOfYear % puzzleConfigs.length;
+  // Use sequential progression - if day exceeds available puzzles, use the last available puzzle
+  const puzzleIndex = Math.min(dayOfYear, puzzleConfigs.length - 1);
   return puzzleConfigs[puzzleIndex];
 };
 
@@ -42,6 +42,8 @@ const BODMASPuzzle: React.FC = () => {
   const [isPuzzleCompleted, setIsPuzzleCompleted] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showHints, setShowHints] = useState(false);
+  const [mobileRulesExpanded, setMobileRulesExpanded] = useState(false);
+  const [mobileActiveTab, setMobileActiveTab] = useState<'rules' | 'tips'>('rules');
   const [warningMessage, setWarningMessage] = useState('');
   const puzzleRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout>();
@@ -207,11 +209,11 @@ const BODMASPuzzle: React.FC = () => {
 
     if (!allFilled) {
       setResult("Please complete all fields to validate your solution");
-      setResultColor("#e74c3c");
+      setResultColor("#dc3545");
       setShowShareButtons(true);
     } else if (rowResults.every(Boolean)) {
       setResult("✓ Excellent! Challenge completed successfully");
-      setResultColor("#27ae60");
+      setResultColor("#198754");
       setIsTimerRunning(false);
       setIsPuzzleCompleted(true);
       setShowShareButtons(true);
@@ -220,7 +222,7 @@ const BODMASPuzzle: React.FC = () => {
         .map((correct, i) => `Row ${i + 1}: ${correct ? "✓" : "✗"}`)
         .join(" • ") + " • Please review and try again";
       setResult(summary);
-      setResultColor("#f39c12");
+      setResultColor("#fd7e14");
       setShowShareButtons(true);
     }
   };
@@ -237,9 +239,9 @@ const BODMASPuzzle: React.FC = () => {
       let message: string;
       if (isPuzzleCompleted) {
         const timeTaken = formatTime(seconds);
-        message = `I solved today's Challenge (${dateString}) in ${timeTaken}! Can you beat my time?`;
+        message = `I solved today's BODMAS Challenge (${dateString}) in ${timeTaken}! Can you beat my time?`;
       } else {
-        message = `Check out today's Challenge (${dateString})! Test your mathematical skills.`;
+        message = `Check out today's BODMAS Challenge (${dateString})! Test your mathematical skills.`;
       }
 
       if (platform === 'facebook') {
@@ -258,6 +260,874 @@ const BODMASPuzzle: React.FC = () => {
   };
 
   const size = config.grid.length;
+
+  // Rules and Hints Component
+  const RulesAndHints = ({ isSidebar = false }: { isSidebar?: boolean }) => (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: isSidebar ? '16px' : '12px',
+      width: '100%',
+    }}>
+      {/* Welcome Card - Sidebar Only */}
+      {isSidebar && (
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '12px',
+          padding: '16px',
+          color: 'white',
+          textAlign: 'center',
+          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.2)',
+        }}>
+          <div style={{
+            fontSize: '1.5rem',
+            marginBottom: '8px',
+          }}>
+            🧮
+          </div>
+          <h3 style={{
+            margin: '0 0 6px 0',
+            fontSize: '1rem',
+            fontWeight: '600',
+            letterSpacing: '0.3px',
+          }}>
+            Control Center
+          </h3>
+          <p style={{
+            margin: '0',
+            fontSize: '0.8rem',
+            opacity: 0.9,
+            lineHeight: '1.4',
+          }}>
+            Everything you need to solve the puzzle
+          </p>
+        </div>
+      )}
+
+      {/* Input Panel - Sidebar Only */}
+      {isSidebar && (
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '12px',
+          padding: '16px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid #e8ecef',
+          transition: 'all 0.3s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '12px',
+            gap: '8px',
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+              borderRadius: '50%',
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <FaCalculator style={{ 
+                color: 'white', 
+                fontSize: '0.8rem' 
+              }} />
+            </div>
+            <h3 style={{
+              margin: '0',
+              color: '#2c3e50',
+              fontSize: '1rem',
+              fontWeight: '600',
+              letterSpacing: '0.3px',
+            }}>
+              Number Input
+            </h3>
+          </div>
+          
+          {/* Number Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '8px',
+            marginBottom: '12px',
+          }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+              <button
+                key={num}
+                onClick={() => handleNumberClick(num.toString())}
+                style={{
+                  width: '100%',
+                  height: '40px',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(108, 117, 125, 0.2)',
+                  touchAction: 'manipulation',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #5a6268 0%, #343a40 100%)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(108, 117, 125, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(108, 117, 125, 0.2)';
+                }}
+                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+          
+          {/* Action Buttons */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '8px',
+          }}>
+            <button
+              onClick={handleDelete}
+              style={{
+                padding: '8px 4px',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                touchAction: 'manipulation',
+                height: '36px',
+                boxShadow: '0 2px 8px rgba(220, 53, 69, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #c82333 0%, #a71e2a 100%)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(220, 53, 69, 0.2)';
+              }}
+              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <MdDelete style={{ fontSize: '1rem' }} />
+              Clear
+            </button>
+            
+            <button
+              onClick={handleReset}
+              style={{
+                padding: '8px 4px',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                touchAction: 'manipulation',
+                height: '36px',
+                boxShadow: '0 2px 8px rgba(253, 126, 20, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #e55a00 0%, #cc4f00 100%)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(253, 126, 20, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(253, 126, 20, 0.2)';
+              }}
+              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <MdRefresh style={{ fontSize: '1rem' }} />
+              Reset
+            </button>
+            
+            <button
+              onClick={checkSolution}
+              style={{
+                padding: '8px 4px',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #198754 0%, #146c43 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                touchAction: 'manipulation',
+                height: '36px',
+                boxShadow: '0 2px 8px rgba(25, 135, 84, 0.2)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #146c43 0%, #0f5132 100%)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(25, 135, 84, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #198754 0%, #146c43 100%)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(25, 135, 84, 0.2)';
+              }}
+              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <MdCheck style={{ fontSize: '1rem' }} />
+              Check
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Rules */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: isSidebar ? '12px' : '8px',
+        padding: isSidebar ? '16px' : '15px',
+        boxShadow: isSidebar ? '0 4px 20px rgba(0,0,0,0.08)' : '0 2px 12px rgba(0,0,0,0.05)',
+        border: '1px solid #e8ecef',
+        transition: 'all 0.3s ease',
+      }}
+      onMouseEnter={(e) => {
+        if (isSidebar) {
+          e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (isSidebar) {
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }
+      }}>
+        <h3 style={{
+          margin: '0 0 12px 0',
+          color: '#2c3e50',
+          fontSize: isSidebar ? '1rem' : 'clamp(0.9rem, 4vw, 1rem)',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          cursor: 'pointer',
+          letterSpacing: '0.3px',
+          transition: 'color 0.2s ease',
+        }}
+        onClick={() => setShowRules(!showRules)}
+        onMouseEnter={(e) => e.currentTarget.style.color = '#667eea'}
+        onMouseLeave={(e) => e.currentTarget.style.color = '#2c3e50'}>
+          <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            borderRadius: '50%',
+            padding: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <FaBook style={{ 
+              color: 'white', 
+              fontSize: isSidebar ? '0.8rem' : '0.7rem' 
+            }} />
+          </div>
+          Game Rules 
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: '0.8rem',
+            color: '#6c757d',
+            transition: 'transform 0.2s ease',
+            transform: showRules ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}>
+            ▼
+          </span>
+        </h3>
+        {showRules && (
+          <div style={{
+            animation: 'fadeIn 0.3s ease-out',
+          }}>
+            <ol style={{
+              listStyleType: 'none',
+              paddingLeft: '0',
+              lineHeight: '1.6',
+              color: '#5a6c7d',
+              fontSize: isSidebar ? '0.85rem' : 'clamp(0.8rem, 3vw, 0.9rem)',
+              margin: '0',
+              counterReset: 'rule-counter',
+            }}>
+              {[
+                'Apply BODMAS rule: evaluate left to right in rows, top to bottom in columns',
+                'Fill empty cells with digits 1-9 to complete all equations',
+                'Each digit may appear only once per row or column equation',
+                'All digits 1-9 must be used at least once in the complete grid'
+              ].map((rule, index) => (
+                <li key={index} style={{
+                  marginBottom: '10px',
+                  paddingLeft: '24px',
+                  position: 'relative',
+                  counterIncrement: 'rule-counter',
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    left: '0',
+                    top: '0',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.7rem',
+                    fontWeight: '600',
+                  }}>
+                    {index + 1}
+                  </span>
+                  {rule}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </div>
+
+      {/* Hints */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: isSidebar ? '12px' : '8px',
+        padding: isSidebar ? '16px' : '15px',
+        boxShadow: isSidebar ? '0 4px 20px rgba(0,0,0,0.08)' : '0 2px 12px rgba(0,0,0,0.05)',
+        border: '1px solid #e8ecef',
+        transition: 'all 0.3s ease',
+      }}
+      onMouseEnter={(e) => {
+        if (isSidebar) {
+          e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (isSidebar) {
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }
+      }}>
+        <h3 style={{
+          margin: '0 0 12px 0',
+          color: '#2c3e50',
+          fontSize: isSidebar ? '1rem' : 'clamp(0.9rem, 4vw, 1rem)',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          cursor: 'pointer',
+          letterSpacing: '0.3px',
+          transition: 'color 0.2s ease',
+        }}
+        onClick={() => setShowHints(!showHints)}
+        onMouseEnter={(e) => e.currentTarget.style.color = '#f39c12'}
+        onMouseLeave={(e) => e.currentTarget.style.color = '#2c3e50'}>
+          <div style={{
+            background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
+            borderRadius: '50%',
+            padding: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <FaLightbulb style={{ 
+              color: 'white', 
+              fontSize: isSidebar ? '0.8rem' : '0.7rem' 
+            }} />
+          </div>
+          Strategy Tips
+          <span style={{
+            marginLeft: 'auto',
+            fontSize: '0.8rem',
+            color: '#6c757d',
+            transition: 'transform 0.2s ease',
+            transform: showHints ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}>
+            ▼
+          </span>
+        </h3>
+        {showHints && (
+          <div style={{
+            animation: 'fadeIn 0.3s ease-out',
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #fff7e6 0%, #fef3e2 100%)',
+              borderRadius: '8px',
+              padding: '12px',
+              marginBottom: '12px',
+              border: '1px solid #f39c12',
+              borderLeft: '4px solid #f39c12',
+            }}>
+              <div style={{
+                fontSize: isSidebar ? '0.8rem' : '0.75rem',
+                color: '#d68910',
+                fontWeight: '600',
+                marginBottom: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}>
+                💡 Pro Tip
+              </div>
+              <div style={{
+                fontSize: isSidebar ? '0.8rem' : '0.75rem',
+                color: '#8b6914',
+                lineHeight: '1.4',
+              }}>
+                Start with equations that have fewer unknowns to build momentum!
+              </div>
+            </div>
+            <ol style={{
+              listStyleType: 'none',
+              paddingLeft: '0',
+              lineHeight: '1.6',
+              color: '#5a6c7d',
+              fontSize: isSidebar ? '0.85rem' : 'clamp(0.8rem, 3vw, 0.9rem)',
+              margin: '0',
+              counterReset: 'tip-counter',
+            }}>
+              {[
+                'Follow BODMAS order: Division/Multiplication first, then Addition/Subtraction',
+                'Process operations sequentially from left to right (rows) or top to bottom (columns)',
+                'Example calculation: 7×5+4÷2-1 = 35+2-1 = 36'
+              ].map((tip, index) => (
+                <li key={index} style={{
+                  marginBottom: '10px',
+                  paddingLeft: '24px',
+                  position: 'relative',
+                  counterIncrement: 'tip-counter',
+                }}>
+                  <span style={{
+                    position: 'absolute',
+                    left: '0',
+                    top: '0',
+                    background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.7rem',
+                    fontWeight: '600',
+                  }}>
+                    {index + 1}
+                  </span>
+                  {tip}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </div>
+
+      {/* Progress Card - Sidebar Only */}
+      {isSidebar && (
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '12px',
+          padding: '12px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid #e8ecef',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            marginBottom: '6px',
+          }}>
+            <div style={{
+              fontSize: '1.2rem',
+            }}>
+              ⏱️
+            </div>
+            <h4 style={{
+              margin: '0',
+              color: '#2c3e50',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+            }}>
+              Progress
+            </h4>
+          </div>
+          <div style={{
+            fontSize: '1.1rem',
+            fontWeight: '600',
+            color: '#667eea',
+            fontFamily: 'monospace',
+            letterSpacing: '1px',
+          }}>
+            {formatTime(seconds)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Mobile Compact Rules Component
+  const MobileCompactRules = () => {
+    const handleTabClick = (tab: 'rules' | 'tips') => {
+      if (mobileRulesExpanded && mobileActiveTab === tab) {
+        // If clicking the same active tab when expanded, collapse
+        setMobileRulesExpanded(false);
+      } else {
+        // If collapsed or clicking different tab, expand and switch
+        setMobileActiveTab(tab);
+        setMobileRulesExpanded(true);
+      }
+    };
+    
+    return (
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '8px',
+        padding: '8px',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+        marginBottom: '8px',
+        border: '1px solid #f1f3f4',
+      }}>
+        {/* Tab Headers */}
+        <div style={{
+          display: 'flex',
+          gap: '4px',
+          marginBottom: mobileRulesExpanded ? '8px' : '0',
+        }}>
+          <button
+            onClick={() => handleTabClick('rules')}
+            style={{
+              flex: 1,
+              padding: '6px 8px',
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              background: mobileActiveTab === 'rules' && mobileRulesExpanded ? 
+                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#f8f9fa',
+              color: mobileActiveTab === 'rules' && mobileRulesExpanded ? 'white' : '#6c757d',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+            }}
+          >
+            <FaBook style={{ fontSize: '0.7rem' }} />
+            Rules
+            <span style={{
+              fontSize: '0.6rem',
+              transition: 'transform 0.2s ease',
+              transform: mobileRulesExpanded && mobileActiveTab === 'rules' ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}>
+              ▼
+            </span>
+          </button>
+          <button
+            onClick={() => handleTabClick('tips')}
+            style={{
+              flex: 1,
+              padding: '6px 8px',
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              background: mobileActiveTab === 'tips' && mobileRulesExpanded ? 
+                'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : '#f8f9fa',
+              color: mobileActiveTab === 'tips' && mobileRulesExpanded ? 'white' : '#6c757d',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+            }}
+          >
+            <FaLightbulb style={{ fontSize: '0.7rem' }} />
+            Tips
+            <span style={{
+              fontSize: '0.6rem',
+              transition: 'transform 0.2s ease',
+              transform: mobileRulesExpanded && mobileActiveTab === 'tips' ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}>
+              ▼
+            </span>
+          </button>
+        </div>
+
+        {/* Tab Content - Only show when expanded */}
+        {mobileRulesExpanded && (
+          <div style={{
+            minHeight: '60px',
+            fontSize: '0.7rem',
+            lineHeight: '1.4',
+            color: '#5a6c7d',
+          }}>
+            {mobileActiveTab === 'rules' ? (
+              <div>
+                <div style={{ marginBottom: '4px', fontWeight: '600', color: '#2c3e50' }}>
+                  Game Rules:
+                </div>
+                <div style={{ fontSize: '0.65rem' }}>
+                  • Apply BODMAS rule: evaluate left to right in rows, top to bottom in columns<br/>
+                  • Fill empty cells with digits 1-9 to complete all equations<br/>
+                  • Each digit may appear only once per row or column equation
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ 
+                  background: 'linear-gradient(135deg, #fff7e6 0%, #fef3e2 100%)',
+                  borderRadius: '4px',
+                  padding: '6px',
+                  marginBottom: '6px',
+                  border: '1px solid #f39c12',
+                  fontSize: '0.65rem',
+                }}>
+                  <strong>💡 Pro Tip:</strong> Start with equations that have fewer unknowns!
+                </div>
+                <div style={{ fontSize: '0.65rem' }}>
+                  • Follow BODMAS order: Division/Multiplication first, then Addition/Subtraction<br/>
+                  • Process operations sequentially from left to right (rows) or top to bottom (columns)
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Mobile Input Panel Component
+  const MobileInputPanel = () => (
+    <div style={{
+      background: '#ffffff',
+      borderRadius: '8px',
+      padding: '8px',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+      marginBottom: '8px',
+      border: '1px solid #f1f3f4',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '6px',
+        gap: '4px',
+      }}>
+        <FaCalculator style={{ 
+          color: '#6c757d', 
+          fontSize: '0.75rem' 
+        }} />
+        <h3 style={{
+          margin: '0',
+          color: '#495057',
+          fontSize: '0.75rem',
+          fontWeight: '500',
+          letterSpacing: '0.2px',
+        }}>
+          Input Panel
+        </h3>
+      </div>
+      
+      {/* Number Grid - Single Row for Mobile */}
+      <div style={{
+        display: 'flex',
+        gap: '2px',
+        marginBottom: '6px',
+        flexWrap: 'nowrap',
+        width: '100%',
+      }}>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+          <button
+            key={num}
+            onClick={() => handleNumberClick(num.toString())}
+            style={{
+              flex: '1 1 0',
+              minWidth: '0',
+              height: '28px',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              background: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 1px 4px rgba(108, 117, 125, 0.2)',
+              touchAction: 'manipulation',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#5a6268';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#6c757d';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+            onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+            onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            {num}
+          </button>
+        ))}
+      </div>
+      
+      {/* Action Buttons - Full Width Grid but Smaller Height */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: '4px',
+      }}>
+        <button
+          onClick={handleDelete}
+          style={{
+            padding: '4px 2px',
+            fontSize: '0.7rem',
+            fontWeight: '600',
+            background: '#dc3545',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '2px',
+            touchAction: 'manipulation',
+            height: '24px',
+            boxShadow: '0 1px 4px rgba(220, 53, 69, 0.2)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#c82333';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#dc3545';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+          onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+          onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <MdDelete style={{ fontSize: '0.8rem' }} />
+          Clear
+        </button>
+        
+        <button
+          onClick={handleReset}
+          style={{
+            padding: '4px 2px',
+            fontSize: '0.7rem',
+            fontWeight: '600',
+            background: '#fd7e14',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '2px',
+            touchAction: 'manipulation',
+            height: '24px',
+            boxShadow: '0 1px 4px rgba(253, 126, 20, 0.2)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#e55a00';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#fd7e14';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+          onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+          onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <MdRefresh style={{ fontSize: '0.8rem' }} />
+          Reset
+        </button>
+        
+        <button
+          onClick={checkSolution}
+          style={{
+            padding: '4px 2px',
+            fontSize: '0.7rem',
+            fontWeight: '600',
+            background: '#198754',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '2px',
+            touchAction: 'manipulation',
+            height: '24px',
+            boxShadow: '0 1px 4px rgba(25, 135, 84, 0.2)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#146c43';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#198754';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+          onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+          onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <MdCheck style={{ fontSize: '0.8rem' }} />
+          Check
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{
@@ -296,587 +1166,369 @@ const BODMASPuzzle: React.FC = () => {
       {/* Header */}
       <div style={{
         textAlign: 'center',
-        marginBottom: '20px',
+        marginBottom: window.innerWidth < 768 ? '5px' : '20px',
         color: '#495057',
-        padding: '0 10px',
+        padding: window.innerWidth < 768 ? '0 10px' : '0 10px',
       }}>
-        <h1 style={{
-          fontSize: 'clamp(1.5rem, 5vw, 2.2rem)',
-          fontWeight: '400',
-          margin: '0 0 8px 0',
-          letterSpacing: '0.3px',
-          color: '#343a40',
+        {/* Site Logo and Title */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: window.innerWidth < 768 ? '4px' : '8px',
+          marginBottom: window.innerWidth < 768 ? '2px' : '4px',
         }}>
-          Daily Challenge
-        </h1>
-        <p style={{
-          fontSize: 'clamp(0.9rem, 3vw, 1rem)',
-          opacity: 0.8,
-          margin: '0',
-          fontWeight: '400',
-          letterSpacing: '0.2px',
-        }}>
-          Daily Mathematical Puzzle
-        </p>
+          <div style={{
+            fontSize: window.innerWidth < 768 ? '1.2rem' : '2rem',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            🧮
+          </div>
+          <h1 style={{
+            fontSize: window.innerWidth < 768 ? 'clamp(1rem, 4vw, 1.2rem)' : 'clamp(1.5rem, 5vw, 2.2rem)',
+            fontWeight: '400',
+            margin: '0',
+            letterSpacing: '0.2px',
+            color: '#343a40',
+          }}>
+            BODMAS Challenge
+          </h1>
+        </div>
+        {window.innerWidth >= 768 && (
+          <p style={{
+            fontSize: 'clamp(0.9rem, 3vw, 1rem)',
+            opacity: 0.8,
+            margin: '0',
+            fontWeight: '400',
+            letterSpacing: '0.2px',
+          }}>
+            Daily Mathematical Puzzle
+          </p>
+        )}
       </div>
 
-      {/* Main Game Container */}
+      {/* Main Container - Responsive Layout */}
       <div style={{
-        maxWidth: '600px',
+        maxWidth: '1200px',
         margin: '0 auto',
-        background: '#ffffff',
-        borderRadius: '12px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-        overflow: 'hidden',
-        border: '1px solid #e9ecef',
+        display: 'flex',
+        gap: '20px',
+        alignItems: 'flex-start',
       }}>
-        {/* Game Header */}
+        {/* Main Game Container */}
         <div style={{
-          background:  'linear-gradient(135deg, #1877F2 30%, #8B9DC3 100%)',//'#1877F2',
-          padding: '15px',
-          color: 'white',
+          flex: 1,
+          maxWidth: window.innerWidth >= 768 ? '600px' : '100%',
+          background: '#ffffff',
+          borderRadius: '12px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          overflow: 'hidden',
+          border: '1px solid #e9ecef',
         }}>
-          {/* Timer and Difficulty */}
+          {/* Game Header */}
           <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '15px',
-            flexWrap: 'wrap',
-            gap: '10px',
+            background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+            padding: '12px 15px',
+            color: 'white',
           }}>
+            {/* Single Row Layout - Timer, Difficulty, and Social Share */}
             <div style={{
               display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
+              flexWrap: 'wrap',
               gap: '8px',
-              background: 'rgba(255,255,255,0.15)',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              fontSize: 'clamp(0.9rem, 3vw, 1rem)',
-              fontWeight: '500',
             }}>
-              <FaClock style={{ fontSize: '0.9rem' }} />
-              <span style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
-                {formatTime(seconds)}
-              </span>
-            </div>
-            
-            <DifficultyLevel blanksLeft={blanksLeft} />
-          </div>
-          
-          {/* Social Share */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '10px',
-            flexWrap: 'wrap',
-          }}>
-            {[
-              { icon: FaFacebook, color: '#1877f2', platform: 'facebook' },
-              { icon: FaTwitter, color: '#1da1f2', platform: 'twitter' },
-              { icon: FaWhatsapp, color: '#25d366', platform: 'whatsapp' },
-              { icon: FaLinkedin, color: '#0077b5', platform: 'linkedin' }
-            ].map(({ icon: Icon, color, platform }) => (
-              <Icon
-                key={platform}
-                onClick={() => shareOnSocialMedia(platform)}
-                style={{
-                  fontSize: '1.1rem',
-                  cursor: 'pointer',
-                  color,
-                  background: 'white',
-                  borderRadius: '50%',
-                  padding: '8px',
-                  width: '34px',
-                  height: '34px',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                }}
-                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              />
-            ))}
-          </div>
-        </div>
+              {/* Timer */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(255,255,255,0.15)',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
+                fontWeight: '500',
+                minWidth: 'fit-content',
+              }}>
+                <FaClock style={{ fontSize: '0.8rem' }} />
+                <span style={{ fontFamily: 'monospace', letterSpacing: '1px' }}>
+                  {formatTime(seconds)}
+                </span>
+              </div>
+              
+              {/* Social Share - Center */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '8px',
+                flexWrap: 'wrap',
+                flex: '1',
+                minWidth: 'fit-content',
+              }}>
+                {[
+                  { icon: FaFacebook, color: '#1877f2', platform: 'facebook' },
+                  { icon: FaTwitter, color: '#1da1f2', platform: 'twitter' },
+                  { icon: FaWhatsapp, color: '#25d366', platform: 'whatsapp' },
+                  { icon: FaLinkedin, color: '#0077b5', platform: 'linkedin' }
+                ].map(({ icon: Icon, color, platform }) => (
+                  <Icon
+                    key={platform}
+                    onClick={() => shareOnSocialMedia(platform)}
+                    style={{
+                      fontSize: '1rem',
+                      cursor: 'pointer',
+                      color,
+                      background: 'white',
+                      borderRadius: '50%',
+                      padding: '6px',
+                      width: '28px',
+                      height: '28px',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                      e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.1)';
+                    }}
+                    onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                    onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  />
+                ))}
+              </div>
 
-        {/* Game Board */}
-        <div style={{ padding: '20px' }} ref={puzzleRef}>
-          {/* Puzzle Grid */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '8px',
-            padding: '15px',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-            marginBottom: '15px',
-            border: '1px solid #f1f3f4',
-          }}>
-            <table style={{
-              borderCollapse: 'collapse',
-              margin: '0 auto',
-              fontSize: 'clamp(0.8rem, 3vw, 1rem)',
+              {/* Difficulty - Right */}
+              <div style={{ minWidth: 'fit-content' }}>
+                <DifficultyLevel blanksLeft={blanksLeft} />
+              </div>
+            </div>
+          </div>
+
+          {/* Game Board */}
+          <div style={{ 
+            padding: window.innerWidth < 768 ? '12px' : '20px' 
+          }} ref={puzzleRef}>
+            {/* Mobile Compact Rules - Top Position */}
+            <div style={{
+              display: window.innerWidth < 768 ? 'block' : 'none',
+              marginBottom: '8px',
             }}>
-              <tbody>
-                {config.grid.map((row, rowIndex) => (
-                  <Fragment key={`row-${rowIndex}`}>
-                    <tr>
-                      {row.map((cell, colIndex) => {
-                        const cellId = `cell-${rowIndex + 1}-${colIndex + 1}`;
-                        const isFixed = cell.fixed;
-                        
-                        return (
-                          <Fragment key={`cell-${rowIndex}-${colIndex}`}>
-                            <td style={{ padding: '4px' }}>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[1-9]"
-                                id={cellId}
-                                style={{
-                                  width: 'clamp(35px, 8vw, 45px)',
-                                  height: 'clamp(35px, 8vw, 45px)',
-                                  textAlign: 'center',
-                                  fontSize: 'clamp(1rem, 4vw, 1.3rem)',
+              <MobileCompactRules />
+            </div>
+
+            {/* Puzzle Grid */}
+            <div style={{
+              background: '#ffffff',
+              borderRadius: '8px',
+              padding: window.innerWidth < 768 ? '10px' : '15px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+              marginBottom: window.innerWidth < 768 ? '10px' : '15px',
+              border: '1px solid #f1f3f4',
+            }}>
+              <table style={{
+                borderCollapse: 'collapse',
+                margin: '0 auto',
+                fontSize: 'clamp(0.8rem, 3vw, 1rem)',
+              }}>
+                <tbody>
+                  {config.grid.map((row, rowIndex) => (
+                    <Fragment key={`row-${rowIndex}`}>
+                      <tr>
+                        {row.map((cell, colIndex) => {
+                          const cellId = `cell-${rowIndex + 1}-${colIndex + 1}`;
+                          const isFixed = cell.fixed;
+                          
+                          return (
+                            <Fragment key={`cell-${rowIndex}-${colIndex}`}>
+                              <td style={{ padding: '4px' }}>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[1-9]"
+                                  id={cellId}
+                                  style={{
+                                    width: 'clamp(35px, 8vw, 45px)',
+                                    height: 'clamp(35px, 8vw, 45px)',
+                                    textAlign: 'center',
+                                    fontSize: 'clamp(1rem, 4vw, 1.3rem)',
+                                    fontWeight: '500',
+                                    border: isFixed ? '1px solid #dee2e6' : 
+                                      selectedCell === cellId ? '2px solid #6c757d' : '1px solid #e9ecef',
+                                    borderRadius: '6px',
+                                    background: isFixed ? '#f8f9fa' : 
+                                      selectedCell === cellId ? '#f1f3f4' : '#ffffff',
+                                    color: isFixed ? '#6c757d' : '#495057',
+                                    transition: 'all 0.2s ease',
+                                    cursor: isFixed ? 'not-allowed' : 'pointer',
+                                    boxShadow: selectedCell === cellId ? 
+                                      '0 0 0 2px rgba(108, 117, 125, 0.2)' : 
+                                      '0 1px 3px rgba(0,0,0,0.05)',
+                                    fontFamily: 'inherit',
+                                  }}
+                                  value={cellValues[cellId]}
+                                  disabled={isFixed}
+                                  onChange={!isFixed ? (e) => handleCellChange(e, cellId) : undefined}
+                                  onClick={!isFixed ? () => handleCellClick(cellId) : undefined}
+                                  onFocus={!isFixed ? () => setSelectedCell(cellId) : undefined}
+                                />
+                              </td>
+                              {colIndex < row.length - 1 && (
+                                <td style={{
+                                  padding: '4px',
+                                  fontSize: 'clamp(1rem, 4vw, 1.2rem)',
                                   fontWeight: '500',
-                                  border: isFixed ? '1px solid #dee2e6' : 
-                                    selectedCell === cellId ? '2px solid #6c757d' : '1px solid #e9ecef',
-                                  borderRadius: '6px',
-                                  background: isFixed ? '#f8f9fa' : 
-                                    selectedCell === cellId ? '#f1f3f4' : '#ffffff',
-                                  color: isFixed ? '#6c757d' : '#495057',
-                                  transition: 'all 0.2s ease',
-                                  cursor: isFixed ? 'not-allowed' : 'pointer',
-                                  boxShadow: selectedCell === cellId ? 
-                                    '0 0 0 2px rgba(108, 117, 125, 0.2)' : 
-                                    '0 1px 3px rgba(0,0,0,0.05)',
-                                  fontFamily: 'inherit',
-                                }}
-                                value={cellValues[cellId]}
-                                disabled={isFixed}
-                                onChange={!isFixed ? (e) => handleCellChange(e, cellId) : undefined}
-                                onClick={!isFixed ? () => handleCellClick(cellId) : undefined}
-                                onFocus={!isFixed ? () => setSelectedCell(cellId) : undefined}
-                              />
-                            </td>
-                            {colIndex < row.length - 1 && (
+                                  color: '#495057',
+                                  textAlign: 'center',
+                                  minWidth: '20px',
+                                }}>
+                                  {config.rowOperators[rowIndex][colIndex]}
+                                </td>
+                              )}
+                            </Fragment>
+                          );
+                        })}
+                        <td style={{
+                          padding: '4px 8px',
+                          fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
+                          fontWeight: '500',
+                          color: '#198754',
+                          background: '#f8fff9',
+                          borderRadius: '6px',
+                          whiteSpace: 'nowrap',
+                          border: '1px solid #d1e7dd',
+                        }}>
+                          = {config.rowTargets[rowIndex]}
+                        </td>
+                      </tr>
+                      
+                      {rowIndex < size - 1 && (
+                        <tr>
+                          {config.colOperators[rowIndex].map((operator, colIndex) => (
+                            <Fragment key={`op-${rowIndex}-${colIndex}`}>
                               <td style={{
                                 padding: '4px',
                                 fontSize: 'clamp(1rem, 4vw, 1.2rem)',
                                 fontWeight: '500',
                                 color: '#495057',
                                 textAlign: 'center',
-                                minWidth: '20px',
                               }}>
-                                {config.rowOperators[rowIndex][colIndex]}
+                                {operator}
                               </td>
-                            )}
-                          </Fragment>
-                        );
-                      })}
-                      <td style={{
-                        padding: '4px 8px',
-                        fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
-                        fontWeight: '500',
-                        color: '#198754',
-                        background: '#f8fff9',
-                        borderRadius: '6px',
-                        whiteSpace: 'nowrap',
-                        border: '1px solid #d1e7dd',
-                      }}>
-                        = {config.rowTargets[rowIndex]}
-                      </td>
-                    </tr>
-                    
-                    {rowIndex < size - 1 && (
-                      <tr>
-                        {config.colOperators[rowIndex].map((operator, colIndex) => (
-                          <Fragment key={`op-${rowIndex}-${colIndex}`}>
-                            <td style={{
-                              padding: '4px',
-                              fontSize: 'clamp(1rem, 4vw, 1.2rem)',
-                              fontWeight: '500',
-                              color: '#495057',
-                              textAlign: 'center',
-                            }}>
-                              {operator}
-                            </td>
-                            {colIndex < size - 1 && <td style={{ padding: '4px' }}></td>}
-                          </Fragment>
-                        ))}
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-                
-                <tr>
-                  {config.colTargets.map((target, index) => (
-                    <Fragment key={`col-target-${index}`}>
-                      <td style={{
-                        padding: '4px',
-                        fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
-                        fontWeight: '500',
-                        color: '#198754',
-                        background: '#f8fff9',
-                        borderRadius: '6px',
-                        textAlign: 'center',
-                        border: '1px solid #d1e7dd',
-                      }}>
-                        = {target}
-                      </td>
-                      {index < size - 1 && <td style={{ padding: '4px' }}></td>}
+                              {colIndex < size - 1 && <td style={{ padding: '4px' }}></td>}
+                            </Fragment>
+                          ))}
+                        </tr>
+                      )}
                     </Fragment>
                   ))}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  
+                  <tr>
+                    {config.colTargets.map((target, index) => (
+                      <Fragment key={`col-target-${index}`}>
+                        <td style={{
+                          padding: '4px',
+                          fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
+                          fontWeight: '500',
+                          color: '#198754',
+                          background: '#f8fff9',
+                          borderRadius: '6px',
+                          textAlign: 'center',
+                          border: '1px solid #d1e7dd',
+                        }}>
+                          = {target}
+                        </td>
+                        {index < size - 1 && <td style={{ padding: '4px' }}></td>}
+                      </Fragment>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-          {/* Number Pad - Minimal Design */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-            marginBottom: '15px',
-            border: '1px solid #f1f3f4',
-          }}>
+            {/* Mobile Input Panel - Only for Mobile */}
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '8px',
-              gap: '6px',
+              display: window.innerWidth < 768 ? 'block' : 'none',
+              marginBottom: '10px',
             }}>
-              <FaCalculator style={{ 
-                color: '#6c757d', 
-                fontSize: '0.9rem' 
-              }} />
-              <h3 style={{
-                margin: '0',
-                color: '#495057',
-                fontSize: '0.85rem',
-                fontWeight: '500',
-                letterSpacing: '0.2px',
+              <MobileInputPanel />
+            </div>
+
+            {/* Result Display */}
+            {result && (
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '8px',
+                padding: window.innerWidth < 768 ? '12px' : '15px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                marginBottom: window.innerWidth < 768 ? '10px' : '15px',
+                textAlign: 'center',
+                border: `1px solid ${resultColor}`,
               }}>
-                Input Panel
-              </h3>
-            </div>
-            
-            {/* Number Grid */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '4px',
-              marginBottom: '8px',
-              flexWrap: 'wrap',
-            }}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                <button
-                  key={num}
-                  onClick={() => handleNumberClick(num.toString())}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    fontSize: '0.8rem',
-                    fontWeight: '500',
-                    background: '#6c757d',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 4px rgba(108, 117, 125, 0.2)',
-                    touchAction: 'manipulation',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#5a6268';
-                    e.currentTarget.style.transform = 'translateY(-1px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#6c757d';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                  onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                  onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-            
-            {/* Action Buttons */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '6px',
-            }}>
-              <button
-                onClick={handleDelete}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: '0.7rem',
+                <div style={{
+                  fontSize: 'clamp(0.9rem, 4vw, 1rem)',
                   fontWeight: '500',
-                  background: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '2px',
-                  touchAction: 'manipulation',
-                  height: '24px',
-                  minWidth: '50px',
-                  boxShadow: '0 1px 4px rgba(220, 53, 69, 0.2)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#c82333';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#dc3545';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <MdDelete style={{ fontSize: '0.8rem' }} /> Clear
-              </button>
-              
-              <button
-                onClick={handleReset}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: '0.7rem',
-                  fontWeight: '500',
-                  background: '#fd7e14',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '2px',
-                  touchAction: 'manipulation',
-                  height: '24px',
-                  minWidth: '50px',
-                  boxShadow: '0 1px 4px rgba(253, 126, 20, 0.2)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e55a00';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#fd7e14';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <MdRefresh style={{ fontSize: '0.8rem' }} /> Reset
-              </button>
-              
-              <button
-                onClick={checkSolution}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: '0.7rem',
-                  fontWeight: '500',
-                  background: '#198754',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '2px',
-                  touchAction: 'manipulation',
-                  height: '24px',
-                  minWidth: '60px',
-                  boxShadow: '0 1px 4px rgba(25, 135, 84, 0.2)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#146c43';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#198754';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                <MdCheck style={{ fontSize: '0.8rem' }} /> Check
-              </button>
-            </div>
-          </div>
+                  color: resultColor,
+                  lineHeight: '1.4',
+                  letterSpacing: '0.1px',
+                }}>
+                  {result}
+                </div>
+              </div>
+            )}
 
-          {/* Result Display */}
-          {result && (
+            {/* Daily Challenge Info - Compact for Mobile */}
             <div style={{
-              background: '#ffffff',
+              background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
               borderRadius: '8px',
-              padding: '15px',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-              marginBottom: '15px',
+              padding: window.innerWidth < 768 ? '10px' : '15px',
+              color: 'white',
               textAlign: 'center',
-              border: `1px solid ${resultColor}`,
-              maxWidth: '500px',
-              margin: '0 auto 15px auto',
+              boxShadow: '0 2px 12px rgba(108, 117, 125, 0.2)',
             }}>
               <div style={{
-                fontSize: 'clamp(0.9rem, 4vw, 1rem)',
-                fontWeight: '500',
-                color: resultColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                marginBottom: window.innerWidth < 768 ? '4px' : '6px',
+              }}>
+                <MdInfo style={{ fontSize: window.innerWidth < 768 ? '0.9rem' : '1rem' }} />
+                <h3 style={{
+                  margin: '0',
+                  fontSize: window.innerWidth < 768 ? 'clamp(0.9rem, 4vw, 1rem)' : 'clamp(1rem, 4vw, 1.1rem)',
+                  fontWeight: '500',
+                  letterSpacing: '0.2px',
+                }}>
+                  Daily Challenge
+                </h3>
+              </div>
+              <p style={{
+                margin: '0',
+                fontSize: window.innerWidth < 768 ? 'clamp(0.75rem, 3vw, 0.85rem)' : 'clamp(0.8rem, 3vw, 0.9rem)',
+                opacity: 0.9,
                 lineHeight: '1.4',
                 letterSpacing: '0.1px',
               }}>
-                {result}
-              </div>
-            </div>
-          )}
-
-          {/* Rules and Hints */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            maxWidth: '500px',
-            margin: '0 auto',
-          }}>
-            {/* Rules */}
-            <div style={{
-              background: '#ffffff',
-              borderRadius: '8px',
-              padding: '15px',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-              border: '1px solid #f1f3f4',
-            }}>
-              <h3 style={{
-                margin: '0 0 10px 0',
-                color: '#495057',
-                fontSize: 'clamp(0.9rem, 4vw, 1rem)',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                letterSpacing: '0.2px',
-              }}
-              onClick={() => setShowRules(!showRules)}>
-                <FaBook style={{ color: '#6c757d', fontSize: '0.9rem' }} />
-                Game Rules {showRules ? '▼' : '▶'}
-              </h3>
-              {showRules && (
-                <ol style={{
-                  listStyleType: 'decimal',
-                  paddingLeft: '1.2rem',
-                  lineHeight: '1.5',
-                  color: '#6c757d',
-                  fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
-                  margin: '0',
-                }}>
-                  <li>Apply BODMAS rule: evaluate left to right in rows, top to bottom in columns</li>
-                  <li>Fill empty cells with digits 1-9 to complete all equations</li>
-                  <li>Each digit may appear only once per row or column equation</li>
-                  <li>All digits 1-9 must be used at least once in the complete grid</li>
-                </ol>
-              )}
-            </div>
-
-            {/* Hints */}
-            <div style={{
-              background: '#ffffff',
-              borderRadius: '8px',
-              padding: '15px',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
-              border: '1px solid #f1f3f4',
-            }}>
-              <h3 style={{
-                margin: '0 0 10px 0',
-                color: '#495057',
-                fontSize: 'clamp(0.9rem, 4vw, 1rem)',
-                fontWeight: '500',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                letterSpacing: '0.2px',
-              }}
-              onClick={() => setShowHints(!showHints)}>
-                <FaLightbulb style={{ color: '#fd7e14', fontSize: '0.9rem' }} />
-                Strategy Tips {showHints ? '▼' : '▶'}
-              </h3>
-              {showHints && (
-                <ol style={{
-                  listStyleType: 'decimal',
-                  paddingLeft: '1.2rem',
-                  lineHeight: '1.5',
-                  color: '#6c757d',
-                  fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
-                  margin: '0',
-                }}>
-                  <li>Follow BODMAS order: Division/Multiplication first, then Addition/Subtraction</li>
-                  <li>Process operations sequentially from left to right (rows) or top to bottom (columns)</li>
-                  <li>Example calculation: 7×5+4÷2-1 = 35+2-1 = 36</li>
-                </ol>
-              )}
+                New puzzle available daily. Return tomorrow for your next mathematical challenge.
+              </p>
             </div>
           </div>
+        </div>
 
-          {/* Daily Challenge Info */}
-          <div style={{
-            background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
-            borderRadius: '8px',
-            padding: '15px',
-            marginTop: '20px',
-            color: 'white',
-            textAlign: 'center',
-            maxWidth: '500px',
-            margin: '20px auto 0 auto',
-            boxShadow: '0 2px 12px rgba(108, 117, 125, 0.2)',
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              marginBottom: '6px',
-            }}>
-              <MdInfo style={{ fontSize: '1rem' }} />
-              <h3 style={{
-                margin: '0',
-                fontSize: 'clamp(1rem, 4vw, 1.1rem)',
-                fontWeight: '500',
-                letterSpacing: '0.2px',
-              }}>
-                Daily Challenge
-              </h3>
-            </div>
-            <p style={{
-              margin: '0',
-              fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
-              opacity: 0.9,
-              lineHeight: '1.4',
-              letterSpacing: '0.1px',
-            }}>
-              New puzzle available daily. Return tomorrow for your next mathematical challenge.
-            </p>
-          </div>
+        {/* Right Sidebar Rules - Desktop Only */}
+        <div style={{
+          width: '320px',
+          flexShrink: 0,
+          display: window.innerWidth >= 768 ? 'block' : 'none',
+        }}>
+          <RulesAndHints isSidebar={true} />
         </div>
       </div>
 
@@ -889,6 +1541,35 @@ const BODMASPuzzle: React.FC = () => {
           to {
             transform: translate(-50%, 0);
             opacity: 1;
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @media (max-width: 767px) {
+          .sidebar-rules {
+            display: none !important;
+          }
+          .mobile-rules {
+            display: block !important;
+          }
+        }
+
+        @media (min-width: 768px) {
+          .sidebar-rules {
+            display: block !important;
+          }
+          .mobile-rules {
+            display: none !important;
           }
         }
       `}</style>
