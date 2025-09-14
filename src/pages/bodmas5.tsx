@@ -14,8 +14,13 @@ const getDailyPuzzle = (): PuzzleConfig => {
   const startOfYear = new Date(today.getFullYear(), 0, 1);
   const dayOfYear = Math.floor((today.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
   
-  // Use sequential progression - if day exceeds available puzzles, use the last available puzzle
-  const puzzleIndex = Math.min(dayOfYear, puzzleConfigs.length - 1);
+  // Use a consistent random starting point based on the year
+  // This ensures the same starting point for the entire year but different each year
+  const yearSeed = today.getFullYear();
+  const randomOffset = (yearSeed * 17 + 42) % puzzleConfigs.length; // Simple pseudo-random based on year
+  
+  // Add day of year to random offset and cycle through available puzzles
+  const puzzleIndex = (randomOffset + dayOfYear) % puzzleConfigs.length;
   return puzzleConfigs[puzzleIndex];
 };
 
