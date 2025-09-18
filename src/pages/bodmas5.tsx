@@ -45,9 +45,9 @@ const BODMASPuzzle: React.FC = () => {
   const [resultColor, setResultColor] = useState('black');
   const [showShareButtons, setShowShareButtons] = useState(false);
   const [isPuzzleCompleted, setIsPuzzleCompleted] = useState(false);
-  const [showRules, setShowRules] = useState(false);
+  const [showRules, setShowRules] = useState(true); // Default open
   const [showHints, setShowHints] = useState(false);
-  const [mobileRulesExpanded, setMobileRulesExpanded] = useState(false);
+  const [mobileRulesExpanded, setMobileRulesExpanded] = useState(true); // Default open
   const [mobileActiveTab, setMobileActiveTab] = useState<'rules' | 'tips'>('rules');
   const [warningMessage, setWarningMessage] = useState('');
   const puzzleRef = useRef<HTMLDivElement>(null);
@@ -271,7 +271,7 @@ const BODMASPuzzle: React.FC = () => {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: isSidebar ? '16px' : '12px',
+      gap: isSidebar ? '12px' : '12px', // Reduced gap for smaller height
       width: '100%',
     }}>
       {/* Welcome Card - Sidebar Only */}
@@ -279,20 +279,20 @@ const BODMASPuzzle: React.FC = () => {
         <div style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           borderRadius: '12px',
-          padding: '16px',
+          padding: '12px', // Reduced padding
           color: 'white',
           textAlign: 'center',
           boxShadow: '0 4px 20px rgba(102, 126, 234, 0.2)',
         }}>
           <div style={{
-            fontSize: '1.5rem',
-            marginBottom: '8px',
+            fontSize: '1.2rem', // Reduced size
+            marginBottom: '6px',
           }}>
             🧮
           </div>
           <h3 style={{
-            margin: '0 0 6px 0',
-            fontSize: '1rem',
+            margin: '0 0 4px 0',
+            fontSize: '0.9rem', // Reduced size
             fontWeight: '600',
             letterSpacing: '0.3px',
           }}>
@@ -300,7 +300,7 @@ const BODMASPuzzle: React.FC = () => {
           </h3>
           <p style={{
             margin: '0',
-            fontSize: '0.8rem',
+            fontSize: '0.7rem', // Reduced size
             opacity: 0.9,
             lineHeight: '1.4',
           }}>
@@ -309,223 +309,11 @@ const BODMASPuzzle: React.FC = () => {
         </div>
       )}
 
-      {/* Input Panel - Sidebar Only */}
-      {isSidebar && (
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '12px',
-          padding: '16px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-          border: '1px solid #e8ecef',
-          transition: 'all 0.3s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
-          e.currentTarget.style.transform = 'translateY(-2px)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
-          e.currentTarget.style.transform = 'translateY(0)';
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '12px',
-            gap: '8px',
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-              borderRadius: '50%',
-              padding: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <FaCalculator style={{ 
-                color: 'white', 
-                fontSize: '0.8rem' 
-              }} />
-            </div>
-            <h3 style={{
-              margin: '0',
-              color: '#2c3e50',
-              fontSize: '1rem',
-              fontWeight: '600',
-              letterSpacing: '0.3px',
-            }}>
-              Number Input
-            </h3>
-          </div>
-          
-          {/* Number Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '8px',
-            marginBottom: '12px',
-          }}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-              <button
-                key={num}
-                onClick={() => handleNumberClick(num.toString())}
-                style={{
-                  width: '100%',
-                  height: '40px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: '0 2px 8px rgba(108, 117, 125, 0.2)',
-                  touchAction: 'manipulation',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #5a6268 0%, #343a40 100%)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(108, 117, 125, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(108, 117, 125, 0.2)';
-                }}
-                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                {num}
-              </button>
-            ))}
-          </div>
-          
-          {/* Action Buttons */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: '8px',
-          }}>
-            <button
-              onClick={handleDelete}
-              style={{
-                padding: '8px 4px',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                touchAction: 'manipulation',
-                height: '36px',
-                boxShadow: '0 2px 8px rgba(220, 53, 69, 0.2)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #c82333 0%, #a71e2a 100%)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(220, 53, 69, 0.2)';
-              }}
-              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <MdDelete style={{ fontSize: '1rem' }} />
-              Clear
-            </button>
-            
-            <button
-              onClick={handleReset}
-              style={{
-                padding: '8px 4px',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                background: 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                touchAction: 'manipulation',
-                height: '36px',
-                boxShadow: '0 2px 8px rgba(253, 126, 20, 0.2)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #e55a00 0%, #cc4f00 100%)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(253, 126, 20, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(253, 126, 20, 0.2)';
-              }}
-              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <MdRefresh style={{ fontSize: '1rem' }} />
-              Reset
-            </button>
-            
-            <button
-              onClick={checkSolution}
-              style={{
-                padding: '8px 4px',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                background: 'linear-gradient(135deg, #198754 0%, #146c43 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                touchAction: 'manipulation',
-                height: '36px',
-                boxShadow: '0 2px 8px rgba(25, 135, 84, 0.2)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #146c43 0%, #0f5132 100%)';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(25, 135, 84, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #198754 0%, #146c43 100%)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(25, 135, 84, 0.2)';
-              }}
-              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <MdCheck style={{ fontSize: '1rem' }} />
-              Check
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Rules */}
       <div style={{
         background: '#ffffff',
         borderRadius: isSidebar ? '12px' : '8px',
-        padding: isSidebar ? '16px' : '15px',
+        padding: isSidebar ? '12px' : '15px', // Reduced padding for sidebar
         boxShadow: isSidebar ? '0 4px 20px rgba(0,0,0,0.08)' : '0 2px 12px rgba(0,0,0,0.05)',
         border: '1px solid #e8ecef',
         transition: 'all 0.3s ease',
@@ -543,13 +331,13 @@ const BODMASPuzzle: React.FC = () => {
         }
       }}>
         <h3 style={{
-          margin: '0 0 12px 0',
+          margin: '0 0 10px 0', // Reduced margin
           color: '#2c3e50',
-          fontSize: isSidebar ? '1rem' : 'clamp(0.9rem, 4vw, 1rem)',
+          fontSize: isSidebar ? '0.9rem' : 'clamp(0.9rem, 4vw, 1rem)', // Reduced size
           fontWeight: '600',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '6px', // Reduced gap
           cursor: 'pointer',
           letterSpacing: '0.3px',
           transition: 'color 0.2s ease',
@@ -560,20 +348,20 @@ const BODMASPuzzle: React.FC = () => {
           <div style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             borderRadius: '50%',
-            padding: '6px',
+            padding: '5px', // Reduced padding
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
             <FaBook style={{ 
               color: 'white', 
-              fontSize: isSidebar ? '0.8rem' : '0.7rem' 
+              fontSize: isSidebar ? '0.7rem' : '0.7rem' // Reduced size
             }} />
           </div>
           Game Rules 
           <span style={{
             marginLeft: 'auto',
-            fontSize: '0.8rem',
+            fontSize: '0.7rem', // Reduced size
             color: '#6c757d',
             transition: 'transform 0.2s ease',
             transform: showRules ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -582,15 +370,13 @@ const BODMASPuzzle: React.FC = () => {
           </span>
         </h3>
         {showRules && (
-          <div style={{
-            animation: 'fadeIn 0.3s ease-out',
-          }}>
+          <div>
             <ol style={{
               listStyleType: 'none',
               paddingLeft: '0',
-              lineHeight: '1.6',
+              lineHeight: '1.5', // Reduced line height
               color: '#5a6c7d',
-              fontSize: isSidebar ? '0.85rem' : 'clamp(0.8rem, 3vw, 0.9rem)',
+              fontSize: isSidebar ? '0.75rem' : 'clamp(0.8rem, 3vw, 0.9rem)', // Reduced size
               margin: '0',
               counterReset: 'rule-counter',
             }}>
@@ -601,8 +387,8 @@ const BODMASPuzzle: React.FC = () => {
                 'All digits 1-9 must be used at least once in the complete grid'
               ].map((rule, index) => (
                 <li key={index} style={{
-                  marginBottom: '10px',
-                  paddingLeft: '24px',
+                  marginBottom: '8px', // Reduced margin
+                  paddingLeft: '20px', // Reduced padding
                   position: 'relative',
                   counterIncrement: 'rule-counter',
                 }}>
@@ -613,12 +399,12 @@ const BODMASPuzzle: React.FC = () => {
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                     color: 'white',
                     borderRadius: '50%',
-                    width: '18px',
-                    height: '18px',
+                    width: '16px', // Reduced size
+                    height: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '0.7rem',
+                    fontSize: '0.6rem', // Reduced size
                     fontWeight: '600',
                   }}>
                     {index + 1}
@@ -635,7 +421,7 @@ const BODMASPuzzle: React.FC = () => {
       <div style={{
         background: '#ffffff',
         borderRadius: isSidebar ? '12px' : '8px',
-        padding: isSidebar ? '16px' : '15px',
+        padding: isSidebar ? '12px' : '15px', // Reduced padding for sidebar
         boxShadow: isSidebar ? '0 4px 20px rgba(0,0,0,0.08)' : '0 2px 12px rgba(0,0,0,0.05)',
         border: '1px solid #e8ecef',
         transition: 'all 0.3s ease',
@@ -653,13 +439,13 @@ const BODMASPuzzle: React.FC = () => {
         }
       }}>
         <h3 style={{
-          margin: '0 0 12px 0',
+          margin: '0 0 10px 0', // Reduced margin
           color: '#2c3e50',
-          fontSize: isSidebar ? '1rem' : 'clamp(0.9rem, 4vw, 1rem)',
+          fontSize: isSidebar ? '0.9rem' : 'clamp(0.9rem, 4vw, 1rem)', // Reduced size
           fontWeight: '600',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '6px', // Reduced gap
           cursor: 'pointer',
           letterSpacing: '0.3px',
           transition: 'color 0.2s ease',
@@ -670,20 +456,20 @@ const BODMASPuzzle: React.FC = () => {
           <div style={{
             background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
             borderRadius: '50%',
-            padding: '6px',
+            padding: '5px', // Reduced padding
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
             <FaLightbulb style={{ 
               color: 'white', 
-              fontSize: isSidebar ? '0.8rem' : '0.7rem' 
+              fontSize: isSidebar ? '0.7rem' : '0.7rem' // Reduced size
             }} />
           </div>
           Strategy Tips
           <span style={{
             marginLeft: 'auto',
-            fontSize: '0.8rem',
+            fontSize: '0.7rem', // Reduced size
             color: '#6c757d',
             transition: 'transform 0.2s ease',
             transform: showHints ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -692,42 +478,13 @@ const BODMASPuzzle: React.FC = () => {
           </span>
         </h3>
         {showHints && (
-          <div style={{
-            animation: 'fadeIn 0.3s ease-out',
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #fff7e6 0%, #fef3e2 100%)',
-              borderRadius: '8px',
-              padding: '12px',
-              marginBottom: '12px',
-              border: '1px solid #f39c12',
-              borderLeft: '4px solid #f39c12',
-            }}>
-              <div style={{
-                fontSize: isSidebar ? '0.8rem' : '0.75rem',
-                color: '#d68910',
-                fontWeight: '600',
-                marginBottom: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}>
-                💡 Pro Tip
-              </div>
-              <div style={{
-                fontSize: isSidebar ? '0.8rem' : '0.75rem',
-                color: '#8b6914',
-                lineHeight: '1.4',
-              }}>
-                Start with equations that have fewer unknowns to build momentum!
-              </div>
-            </div>
+          <div>
             <ol style={{
               listStyleType: 'none',
               paddingLeft: '0',
-              lineHeight: '1.6',
+              lineHeight: '1.5', // Reduced line height
               color: '#5a6c7d',
-              fontSize: isSidebar ? '0.85rem' : 'clamp(0.8rem, 3vw, 0.9rem)',
+              fontSize: isSidebar ? '0.75rem' : 'clamp(0.8rem, 3vw, 0.9rem)', // Reduced size
               margin: '0',
               counterReset: 'tip-counter',
             }}>
@@ -737,8 +494,8 @@ const BODMASPuzzle: React.FC = () => {
                 'Example calculation: 7×5+4÷2-1 = 35+2-1 = 36'
               ].map((tip, index) => (
                 <li key={index} style={{
-                  marginBottom: '10px',
-                  paddingLeft: '24px',
+                  marginBottom: '8px', // Reduced margin
+                  paddingLeft: '20px', // Reduced padding
                   position: 'relative',
                   counterIncrement: 'tip-counter',
                 }}>
@@ -749,12 +506,12 @@ const BODMASPuzzle: React.FC = () => {
                     background: 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)',
                     color: 'white',
                     borderRadius: '50%',
-                    width: '18px',
-                    height: '18px',
+                    width: '16px', // Reduced size
+                    height: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '0.7rem',
+                    fontSize: '0.6rem', // Reduced size
                     fontWeight: '600',
                   }}>
                     {index + 1}
@@ -767,12 +524,224 @@ const BODMASPuzzle: React.FC = () => {
         )}
       </div>
 
+      {/* Input Panel - Sidebar Only */}
+      {isSidebar && (
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '12px',
+          padding: '12px', // Reduced padding
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid #e8ecef',
+          transition: 'all 0.3s ease',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '10px', // Reduced margin
+            gap: '6px', // Reduced gap
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+              borderRadius: '50%',
+              padding: '5px', // Reduced padding
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <FaCalculator style={{ 
+                color: 'white', 
+                fontSize: '0.7rem' // Reduced size
+              }} />
+            </div>
+            <h3 style={{
+              margin: '0',
+              color: '#2c3e50',
+              fontSize: '0.9rem', // Reduced size
+              fontWeight: '600',
+              letterSpacing: '0.3px',
+            }}>
+              Number Input
+            </h3>
+          </div>
+          
+          {/* Number Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '6px', // Reduced gap
+            marginBottom: '10px', // Reduced margin
+          }}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+              <button
+                key={num}
+                onClick={() => handleNumberClick(num.toString())}
+                style={{
+                  width: '100%',
+                  height: '32px', // Reduced height
+                  fontSize: '0.9rem', // Reduced size
+                  fontWeight: '600',
+                  background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px', // Reduced radius
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 6px rgba(108, 117, 125, 0.2)', // Reduced shadow
+                  touchAction: 'manipulation',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #5a6268 0%, #343a40 100%)';
+                  e.currentTarget.style.transform = 'translateY(-1px)'; // Reduced transform
+                  e.currentTarget.style.boxShadow = '0 3px 8px rgba(108, 117, 125, 0.3)'; // Reduced shadow
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 6px rgba(108, 117, 125, 0.2)';
+                }}
+                onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+          
+          {/* Action Buttons */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: '6px', // Reduced gap
+          }}>
+            <button
+              onClick={handleDelete}
+              style={{
+                padding: '6px 3px', // Reduced padding
+                fontSize: '0.75rem', // Reduced size
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px', // Reduced radius
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '3px', // Reduced gap
+                touchAction: 'manipulation',
+                height: '28px', // Reduced height
+                boxShadow: '0 2px 6px rgba(220, 53, 69, 0.2)', // Reduced shadow
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #c82333 0%, #a71e2a 100%)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 3px 8px rgba(220, 53, 69, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 6px rgba(220, 53, 69, 0.2)';
+              }}
+              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <MdDelete style={{ fontSize: '0.8rem' }} />
+              Clear
+            </button>
+            
+            <button
+              onClick={handleReset}
+              style={{
+                padding: '6px 3px', // Reduced padding
+                fontSize: '0.75rem', // Reduced size
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px', // Reduced radius
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '3px', // Reduced gap
+                touchAction: 'manipulation',
+                height: '28px', // Reduced height
+                boxShadow: '0 2px 6px rgba(253, 126, 20, 0.2)', // Reduced shadow
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #e55a00 0%, #cc4f00 100%)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 3px 8px rgba(253, 126, 20, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #fd7e14 0%, #e55a00 100%)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 6px rgba(253, 126, 20, 0.2)';
+              }}
+              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <MdRefresh style={{ fontSize: '0.8rem' }} />
+              Reset
+            </button>
+            
+            <button
+              onClick={checkSolution}
+              style={{
+                padding: '6px 3px', // Reduced padding
+                fontSize: '0.75rem', // Reduced size
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #198754 0%, #146c43 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '5px', // Reduced radius
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '3px', // Reduced gap
+                touchAction: 'manipulation',
+                height: '28px', // Reduced height
+                boxShadow: '0 2px 6px rgba(25, 135, 84, 0.2)', // Reduced shadow
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #146c43 0%, #0f5132 100%)';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 3px 8px rgba(25, 135, 84, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #198754 0%, #146c43 100%)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 6px rgba(25, 135, 84, 0.2)';
+              }}
+              onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+              onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <MdCheck style={{ fontSize: '0.8rem' }} />
+              Check
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Progress Card - Sidebar Only */}
       {isSidebar && (
         <div style={{
           background: '#ffffff',
           borderRadius: '12px',
-          padding: '12px',
+          padding: '10px', // Reduced padding
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
           border: '1px solid #e8ecef',
           textAlign: 'center',
@@ -781,25 +750,25 @@ const BODMASPuzzle: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '8px',
-            marginBottom: '6px',
+            gap: '6px', // Reduced gap
+            marginBottom: '4px', // Reduced margin
           }}>
             <div style={{
-              fontSize: '1.2rem',
+              fontSize: '1rem', // Reduced size
             }}>
               ⏱️
             </div>
             <h4 style={{
               margin: '0',
               color: '#2c3e50',
-              fontSize: '0.85rem',
+              fontSize: '0.8rem', // Reduced size
               fontWeight: '600',
             }}>
               Progress
             </h4>
           </div>
           <div style={{
-            fontSize: '1.1rem',
+            fontSize: '1rem', // Reduced size
             fontWeight: '600',
             color: '#667eea',
             fontFamily: 'monospace',
@@ -995,21 +964,21 @@ const BODMASPuzzle: React.FC = () => {
               height: '28px',
               fontSize: '0.85rem',
               fontWeight: '600',
-              background: '#6c757d',
+              background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)', // Blue color
               color: 'white',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
-              boxShadow: '0 1px 4px rgba(108, 117, 125, 0.2)',
+              boxShadow: '0 1px 4px rgba(0, 123, 255, 0.2)',
               touchAction: 'manipulation',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#5a6268';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #0056b3 0%, #004085 100%)';
               e.currentTarget.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#6c757d';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)';
               e.currentTarget.style.transform = 'translateY(0)';
             }}
             onTouchStart={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
@@ -1128,7 +1097,7 @@ const BODMASPuzzle: React.FC = () => {
           onTouchEnd={(e) => e.currentTarget.style.transform = 'scale(1)'}
         >
           <MdCheck style={{ fontSize: '0.8rem' }} />
-          Check
+          Submit
         </button>
       </div>
     </div>
@@ -1148,22 +1117,22 @@ const BODMASPuzzle: React.FC = () => {
           top: '20px',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: '#dc3545',
+          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
           color: 'white',
-          padding: '10px 20px',
-          borderRadius: '6px',
+          padding: '12px 20px', // Increased padding
+          borderRadius: '8px',
+          boxShadow: '0 4px 20px rgba(220, 53, 69, 0.3)',
           zIndex: 1000,
-          fontWeight: '500',
-          fontSize: '0.85rem',
-          boxShadow: '0 4px 16px rgba(220, 53, 69, 0.2)',
+          fontSize: '1rem', // Increased font size
+          fontWeight: '600',
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
+          gap: '8px',
           animation: 'slideDown 0.3s ease-out',
           maxWidth: '90vw',
           textAlign: 'center',
         }}>
-          <MdWarning />
+          <MdWarning style={{ fontSize: '1.2rem' }} />
           {warningMessage}
         </div>
       )}
@@ -1215,18 +1184,14 @@ const BODMASPuzzle: React.FC = () => {
         )}
       </div>
 
-      {/* Main Container - Responsive Layout */}
+      {/* Main Container - Single Column Layout */}
       <div style={{
-        maxWidth: '1200px',
+        maxWidth: '600px',
         margin: '0 auto',
-        display: 'flex',
-        gap: '20px',
-        alignItems: 'flex-start',
+        padding: '0 10px',
       }}>
         {/* Main Game Container */}
         <div style={{
-          flex: 1,
-          maxWidth: window.innerWidth >= 768 ? '600px' : '100%',
           background: '#ffffff',
           borderRadius: '12px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
@@ -1318,11 +1283,10 @@ const BODMASPuzzle: React.FC = () => {
 
           {/* Game Board */}
           <div style={{ 
-            padding: window.innerWidth < 768 ? '12px' : '20px' 
+            padding: '12px'
           }} ref={puzzleRef}>
-            {/* Mobile Compact Rules - Top Position */}
+            {/* Compact Rules - Always at top */}
             <div style={{
-              display: window.innerWidth < 768 ? 'block' : 'none',
               marginBottom: '8px',
             }}>
               <MobileCompactRules />
