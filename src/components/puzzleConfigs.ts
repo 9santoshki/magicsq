@@ -319,7 +319,7 @@ export const puzzleConfigs: PuzzleConfig[] = [
     ['/', '+', '*', '-', '*'],
     ['-', '/', '+', '*', '-']
   ],
-  rowTargets: [37, 5, 6, -36, -26],
+  rowTargets: [12, 5, 6, -36, -26],
   colTargets: [68, 9, -7, -47, -2],
   answers: [
     [8, 4, 2, 5, 1],
