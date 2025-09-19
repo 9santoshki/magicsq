@@ -11,7 +11,7 @@ import { puzzleConfigs } from './components/puzzleConfigs';
 
 
 const App = () => {
-  const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(4);
+  const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(1);
   const currentConfig = puzzleConfigs[currentPuzzleIndex];
 
   return (
