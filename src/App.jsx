@@ -8,7 +8,7 @@ import './App.css';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
-  const [puzzleId, setPuzzleId] = useState(null);
+  const [puzzleId, setPuzzleId] = useState(1);
 
   // Update document title based on current page
   useEffect(() => {
