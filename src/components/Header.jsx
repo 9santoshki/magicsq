@@ -1,4 +1,5 @@
 import React from 'react';
+import InstallButton from './InstallButton';
 
 const Header = ({ currentPage, onNavigate }) => {
   return (
@@ -43,6 +44,7 @@ const Header = ({ currentPage, onNavigate }) => {
               {label}
             </button>
           ))}
+          <InstallButton />
         </nav>
       </div>
     </header>
