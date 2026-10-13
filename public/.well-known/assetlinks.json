@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "online.magicsquare.twa",
+      "sha256_cert_fingerprints": [
+        "08:94:81:63:88:E1:1E:84:AE:9E:4A:17:A1:F1:F4:38:6A:43:13:57:8C:A2:5B:CB:A5:C4:6C:D0:0B:3A:E9:46"
+      ]
+    }
+  }
+]
