@@ -5,21 +5,15 @@ const StarRating = ({ difficulty, maxStars = 5 }) => {
   const filledStars = Math.max(1, Math.min(maxStars, difficulty));
   
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '2px',
-    }}>
+    <div className="flex items-center gap-[2px]">
       {[...Array(maxStars)].map((_, index) => (
         <FaStar
           key={index}
-          style={{
-            fontSize: '1rem',
-            color: index < filledStars ? '#ffd700' : '#e0e0e0', // Light gray for empty stars
-            stroke: index < filledStars ? 'none' : '#cccccc', // Border for empty stars
-            strokeWidth: index < filledStars ? '0' : '1px',
-            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))',
-          }}
+          className={`text-[1rem] drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)] ${
+            index < filledStars
+              ? 'text-[#ffd700] [stroke:none] [stroke-width:0]' // gold for filled stars
+              : 'text-[#e0e0e0] [stroke:#cccccc] [stroke-width:1px]' // light gray for empty stars
+          }`}
         />
       ))}
     </div>

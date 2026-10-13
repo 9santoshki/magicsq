@@ -128,14 +128,12 @@ const BODMASPuzzle = ({ puzzleId }) => {
 
   // Show error popup
   const showErrorPopup = (message, type = 'error') => {
-    console.log('showErrorPopup called with:', { message, type });
     setErrorPopup({ message, isVisible: true, type });
   };
 
-  const closeErrorPopup = () => {
-    console.log('closeErrorPopup called');
+  const closeErrorPopup = useCallback(() => {
     setErrorPopup({ message: '', isVisible: false, type: 'error' });
-  };
+  }, []);
 
   // Reset when config changes
   useEffect(() => {
@@ -194,7 +192,6 @@ const BODMASPuzzle = ({ puzzleId }) => {
     for (let i = 1; i <= size; i++) {
       const rowCellId = `cell-${row}-${i}`;
       if (rowCellId !== cellId && cellValues[rowCellId] && parseInt(cellValues[rowCellId]) === number) {
-        console.log(`Found duplicate ${number} in row ${row} at cell ${rowCellId}`);
         return { allowed: false, error: `Number ${number} already exists in row ${row}.` };
       }
     }
@@ -203,7 +200,6 @@ const BODMASPuzzle = ({ puzzleId }) => {
     for (let i = 1; i <= size; i++) {
       const colCellId = `cell-${i}-${col}`;
       if (colCellId !== cellId && cellValues[colCellId] && parseInt(cellValues[colCellId]) === number) {
-        console.log(`Found duplicate ${number} in column ${col} at cell ${colCellId}`);
         return { allowed: false, error: `Number ${number} already exists in column ${col}.` };
       }
     }
@@ -218,32 +214,24 @@ const BODMASPuzzle = ({ puzzleId }) => {
 
   // Handle number button click
   const handleNumberClick = (number, targetCellId = null) => {
-    console.log('handleNumberClick called with:', number, 'targetCellId:', targetCellId);
-    console.log('selectedCell:', selectedCell);
-    
     // If a target cell is provided (e.g., from drag-and-drop), use it instead of the currently selected cell
     const cellId = targetCellId || selectedCell;
-    
+
     if (!cellId) {
-      console.log('No cell selected, showing error');
       showErrorPopup('⚠️ Please select a cell first', 'error');
       return;
     }
-    
+
     const numValue = typeof number === 'string' ? parseInt(number) : number;
-    console.log('Checking if number is allowed:', numValue, cellId);
     const validation = checkNumberAllowed(numValue, cellId);
-    console.log('Validation result:', validation);
-    
+
     if (validation.allowed) {
-      console.log('Number allowed, setting cell value');
       setCellValues(prev => ({ ...prev, [cellId]: numValue.toString() }));
       // Only clear selection if no target cell was provided explicitly (normal button click)
       if (!targetCellId) {
         setSelectedCell(null);
       }
     } else {
-      console.log('Number not allowed, showing error:', validation.error);
       showErrorPopup(`❌ Rule Violation: ${validation.error}`, 'error');
     }
   };
@@ -294,13 +282,21 @@ const BODMASPuzzle = ({ puzzleId }) => {
     }
   };
 
-  // Evaluate expression using BODMAS
-  const evaluateExpression = (expression) => {
-    try {
-      return Function(`"use strict"; return (${expression})`)();
-    } catch {
-      return null;
+  // Evaluate a sequence of digits left-to-right with the given operators
+  // (per the game's rule: no operator precedence, just left to right).
+  const evaluateExpression = (digits, operators) => {
+    let result = digits[0];
+    for (let i = 0; i < operators.length; i++) {
+      const operand = digits[i + 1];
+      switch (operators[i]) {
+        case '+': result += operand; break;
+        case '-': result -= operand; break;
+        case '*': result *= operand; break;
+        case '/': result /= operand; break;
+        default: return null;
+      }
     }
+    return result;
   };
 
   // Check solution
@@ -331,16 +327,17 @@ const BODMASPuzzle = ({ puzzleId }) => {
       return;
     }
 
-    const usedDigits = new Set();
+    // Parse each cell once into a numeric grid, reused below instead of
+    // re-parsing cellValues separately for the digit check and for every row/column.
+    const grid = {};
     for (let row = 1; row <= size; row++) {
       for (let col = 1; col <= size; col++) {
         const cellId = `cell-${row}-${col}`;
-        const value = cellValues[cellId];
-        if (value) {
-          usedDigits.add(parseInt(value));
-        }
+        grid[cellId] = parseInt(cellValues[cellId], 10);
       }
     }
+
+    const usedDigits = new Set(Object.values(grid));
 
     const missingDigits = [];
     for (let digit = 1; digit <= 9; digit++) {
@@ -356,41 +353,41 @@ const BODMASPuzzle = ({ puzzleId }) => {
       return;
     }
 
+    // Evaluate one row or column: getCellId(i) walks its cells 1..size,
+    // getOperator(i) gives the operator after the i-th cell (i < size).
+    const checkLine = (getCellId, getOperator) => {
+      const digits = [];
+      const operators = [];
+      for (let i = 1; i <= size; i++) {
+        digits.push(grid[getCellId(i)]);
+        if (i < size) {
+          operators.push(getOperator(i));
+        }
+      }
+      return evaluateExpression(digits, operators);
+    };
+
     let incorrectRows = [];
     let incorrectCols = [];
 
     // Check all rows first
     for (let row = 1; row <= size; row++) {
-      let expression = '';
-      for (let col = 1; col <= size; col++) {
-        const cellId = `cell-${row}-${col}`;
-        expression += cellValues[cellId];
-        if (col < size) {
-          expression += config.rowOperators[row - 1][col - 1];
-        }
-      }
-      
-      const result = evaluateExpression(expression);
-      const expected = config.rowTargets[row - 1];
-      if (result !== expected) {
+      const result = checkLine(
+        (col) => `cell-${row}-${col}`,
+        (col) => config.rowOperators[row - 1][col - 1]
+      );
+      if (result !== config.rowTargets[row - 1]) {
         incorrectRows.push(row);
       }
     }
 
     // Check all columns
     for (let col = 1; col <= size; col++) {
-      let expression = '';
-      for (let row = 1; row <= size; row++) {
-        const cellId = `cell-${row}-${col}`;
-        expression += cellValues[cellId];
-        if (row < size) {
-          expression += config.colOperators[row - 1][col - 1];
-        }
-      }
-      
-      const result = evaluateExpression(expression);
-      const expected = config.colTargets[col - 1];
-      if (result !== expected) {
+      const result = checkLine(
+        (row) => `cell-${row}-${col}`,
+        (row) => config.colOperators[row - 1][col - 1]
+      );
+      if (result !== config.colTargets[col - 1]) {
         incorrectCols.push(col);
       }
     }
@@ -415,33 +412,36 @@ const BODMASPuzzle = ({ puzzleId }) => {
     setIsTimerRunning(false); // Stop the timer when puzzle is solved correctly
   };
 
+  // Open a share-intent URL in a new tab, hardened against reverse tabnabbing
+  const openShareWindow = (shareUrl) => {
+    window.open(shareUrl, '_blank', 'noopener,noreferrer');
+  };
+
   // Share functionality
   const shareResult = async (platform) => {
-    console.log('Sharing to', platform);
-    
     // Check if puzzle is completed
     const isPuzzleCompleted = result && result.includes('🎉 Congratulations!');
-    
+
     // Create different messages based on completion status
-    const message = isPuzzleCompleted 
+    const message = isPuzzleCompleted
       ? `I solved today's Magic Square Challenge in ${formatTime(seconds)}! Can you beat my time? #MagicSquare #BrainTeaser #MathPuzzle`
       : `Test your math skills with this Magic Square puzzle. #MagicSquare #BrainTeaser #MathPuzzle`;
-      
+
     const url = 'https://magicsquare.live';
-    
+
     try {
       switch (platform) {
         case 'facebook':
-          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(message)}`, '_blank');
+          openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(message)}`);
           break;
         case 'twitter':
-          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(url)}`, '_blank');
+          openShareWindow(`https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(url)}`);
           break;
         case 'whatsapp':
-          window.open(`https://wa.me/?text=${encodeURIComponent(`${message} ${url}`)}`, '_blank');
+          openShareWindow(`https://wa.me/?text=${encodeURIComponent(`${message} ${url}`)}`);
           break;
         case 'linkedin':
-          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+          openShareWindow(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`);
           break;
         default:
           // Copy to clipboard as fallback
@@ -466,7 +466,7 @@ const BODMASPuzzle = ({ puzzleId }) => {
       <div className="bodmas-puzzle-container" ref={puzzleRef}>
         <div className="bodmas-puzzle-main">
           <div className="bodmas-puzzle-game-container">
-            <div style={{ padding: '20px', textAlign: 'center' }}>
+            <div className="p-5 text-center">
               <p>Loading puzzle...</p>
             </div>
           </div>

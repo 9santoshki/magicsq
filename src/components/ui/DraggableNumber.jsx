@@ -141,37 +141,17 @@ const DraggableNumber = ({ number, onDrop, isMobile, setDragOverCell }) => {
     };
   }, [dragging, initialPosition, position, number, onDrop, setDragOverCell]);
 
-  const buttonStyle = {
-    position: dragging ? 'fixed' : 'static',
-    left: dragging ? `${position.x}px` : 'auto',
-    top: dragging ? `${position.y}px` : 'auto',
-    zIndex: dragging ? 1000 : 'auto',
-    minWidth: isMobile ? '36px' : '28px',
-    height: isMobile ? '36px' : '28px',
-    fontSize: isMobile ? '0.9rem' : '0.8rem',
-    fontWeight: '600',
-    background: dragging 
-      ? 'linear-gradient(135deg, #0056b3 0%, #004085 100%)' // Darker when dragging
-      : 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
-    color: 'white',
-    border: dragging ? '2px solid #ffffff' : 'none', // Add border when dragging
-    borderRadius: '4px',
-    cursor: dragging ? 'grabbing' : 'grab',
-    transition: 'all 0.2s ease',
-    boxShadow: dragging
-      ? '0 8px 20px rgba(0, 123, 255, 0.5)' // Stronger shadow when dragging
-      : '0 1px 3px rgba(0, 123, 255, 0.2)',
-    touchAction: 'none', // Prevent default touch behaviors
-    userSelect: 'none', // Prevent text selection
-    pointerEvents: dragging ? 'none' : 'auto',
-    transform: dragging ? 'scale(1.2)' : 'scale(1)', // More noticeable when dragging
-    opacity: dragging ? 0.9 : 1, // Slightly transparent to allow seeing underlying content
-  };
+  const sizeClasses = isMobile ? 'min-w-9 h-9 text-[0.9rem]' : 'min-w-7 h-7 text-[0.8rem]';
+
+  const stateClasses = dragging
+    ? 'fixed z-[1000] border-2 border-white cursor-grabbing pointer-events-none scale-125 opacity-90 bg-[linear-gradient(135deg,#0056b3_0%,#004085_100%)] shadow-[0_8px_20px_rgba(0,123,255,0.5)]'
+    : 'static border-0 cursor-grab pointer-events-auto scale-100 opacity-100 bg-[linear-gradient(135deg,#007bff_0%,#0056b3_100%)] shadow-[0_1px_3px_rgba(0,123,255,0.2)]';
 
   return (
     <button
       ref={buttonRef}
-      style={buttonStyle}
+      className={`rounded-[4px] font-semibold text-white transition-all duration-200 [touch-action:none] select-none ${sizeClasses} ${stateClasses}`}
+      style={dragging ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       title={dragging ? `Dropping on Cell: ${overCell || 'None'}` : `Drag to place number ${number}`}

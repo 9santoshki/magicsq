@@ -56,21 +56,13 @@ function App() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%)',
-    }}>
+    <div className="min-h-screen flex flex-col bg-[linear-gradient(135deg,#f8f9fa_0%,#e9ecef_50%,#f8f9fa_100%)]">
       <Header currentPage={currentPage} onNavigate={handleNavigate} />
-      
-      <main style={{
-        flex: 1,
-        padding: currentPage === 'home' ? '0' : '20px 0',
-      }}>
+
+      <main className={`flex-1 ${currentPage === 'home' ? '' : 'py-5'}`}>
         {renderPage()}
       </main>
-      
+
       <Footer />
     </div>
   );

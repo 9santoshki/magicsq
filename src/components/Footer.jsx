@@ -1,158 +1,84 @@
 import React from 'react';
 import { FaHeart, FaGithub, FaTwitter, FaLinkedin, FaFacebook } from 'react-icons/fa';
 
+// Static per-brand classes (literal strings so Tailwind's scanner can pick them up).
+const SOCIAL_LINKS = [
+  {
+    icon: FaFacebook,
+    url: 'https://www.facebook.com/profile.php?id=61580108717050',
+    classes: 'bg-[#1877f2] shadow-[0_2px_6px_#1877f280] hover:shadow-[0_6px_12px_#1877f2cc]',
+  },
+  {
+    icon: FaTwitter,
+    url: '#',
+    classes: 'bg-[#1da1f2] shadow-[0_2px_6px_#1da1f280] hover:shadow-[0_6px_12px_#1da1f2cc]',
+  },
+  {
+    icon: FaLinkedin,
+    url: 'https://www.linkedin.com/company/108687992',
+    classes: 'bg-[#0077b5] shadow-[0_2px_6px_#0077b580] hover:shadow-[0_6px_12px_#0077b5cc]',
+  },
+  {
+    icon: FaGithub,
+    url: '#',
+    classes: 'bg-[#333333] shadow-[0_2px_6px_#33333380] hover:shadow-[0_6px_12px_#333333cc]',
+  },
+];
+
 const Footer = () => {
   return (
-    <footer style={{
-      background: '#f8f9fa',
-      color: '#495057',
-      padding: '25px 20px 15px',
-      marginTop: 'auto',
-      borderTop: '1px solid #e9ecef',
-    }}>
-      <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-      }}>
+    <footer className="border-t border-[#e9ecef] bg-[#f8f9fa] px-5 pt-[25px] pb-[15px] text-[#495057] mt-auto">
+      <div className="max-w-[1200px] mx-auto">
         {/* Main Footer Content */}
-        <div style={{
-          display: 'flex',
-          flexDirection: window.innerWidth < 768 ? 'column' : 'row',
-          justifyContent: 'flex-start',
-          alignItems: 'flex-start',
-          gap: '40px',
-          marginBottom: '20px',
-        }}>
+        <div className="mb-5 flex flex-col md:flex-row items-start justify-start gap-10">
           {/* Logo and Description */}
           <div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '12px',
-            }}>
-              <img 
-                src="/magicsqlogo.png" 
+            <div className="mb-3 flex items-center gap-2">
+              <img
+                src="/magicsqlogo.png"
                 alt="Magic SQ Logo"
-                style={{
-                  height: '24px',
-                  width: 'auto',
-                }}
+                className="h-6 w-auto"
               />
-              <h3 style={{
-                fontSize: '1rem',
-                fontWeight: '600',
-                margin: '0',
-                letterSpacing: '0.2px',
-                color: '#343a40',
-              }}>
+              <h3 className="m-0 text-base font-semibold tracking-[0.2px] text-[#343a40]">
                 Magic Square
               </h3>
             </div>
-            <p style={{
-              fontSize: '0.85rem',
-              lineHeight: '1.5',
-              opacity: 0.9,
-              margin: '0',
-              color: '#6c757d',
-            }}>
-              A quick, fun puzzle that'll test your logic, speed, and pattern recognition. 
+            <p className="m-0 text-[0.85rem] leading-[1.5] opacity-90 text-[#6c757d]">
+              A quick, fun puzzle that'll test your logic, speed, and pattern recognition.
               Challenge your friends to beat your time.
             </p>
           </div>
 
           {/* Social Media */}
           <div>
-            <h4 style={{
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              marginBottom: '12px',
-              color: '#495057',
-            }}>
+            <h4 className="mb-3 text-[0.9rem] font-semibold text-[#495057]">
               Follow us on:
             </h4>
-            <div style={{
-              display: 'flex',
-              gap: '10px',
-              marginBottom: '15px',
-            }}>
-              {[
-                { icon: FaFacebook, color: '#1877f2', url: 'https://www.facebook.com/profile.php?id=61580108717050' },
-                { icon: FaTwitter, color: '#1da1f2', url: '#' },
-                { icon: FaLinkedin, color: '#0077b5', url: 'https://www.linkedin.com/company/108687992' },
-                { icon: FaGithub, color: '#333', url: '#' },
-              ].map(({ icon, color, url }, index) => (
+            <div className="mb-[15px] flex gap-[10px]">
+              {SOCIAL_LINKS.map(({ icon, url, classes }, index) => (
                 <a
                   key={index}
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '32px',
-                    height: '32px',
-                    background: color,
-                    borderRadius: '50%',
-                    color: 'white',
-                    textDecoration: 'none',
-                    transition: 'all 0.3s ease',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    boxShadow: `0 2px 6px ${color}80`,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-3px) scale(1.1)';
-                    e.currentTarget.style.boxShadow = `0 6px 12px ${color}CC`;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.boxShadow = `0 2px 6px ${color}80`;
-                  }}
+                  className={`flex items-center justify-center w-8 h-8 rounded-full border border-[rgba(255,255,255,0.2)] text-white no-underline transition-all duration-300 [transition-timing-function:ease] hover:-translate-y-[3px] hover:scale-110 ${classes}`}
                 >
-                  {React.createElement(icon, { style: { fontSize: '0.9rem' } })}
+                  {React.createElement(icon, { className: 'text-[0.9rem]' })}
                 </a>
               ))}
             </div>
-            <p style={{
-              fontSize: '0.75rem',
-              opacity: 0.8,
-              margin: '0',
-              lineHeight: '1.4',
-              color: '#6c757d',
-            }}>
+            <p className="m-0 text-xs opacity-80 leading-[1.4] text-[#6c757d]">
               Follow us for daily puzzle updates!
             </p>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div style={{
-          borderTop: '1px solid #e9ecef',
-          paddingTop: '15px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '10px',
-        }}>
-          <p style={{
-            fontSize: '0.75rem',
-            opacity: 0.8,
-            margin: '0',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            color: '#6c757d',
-          }}>
-            Made with <FaHeart style={{ color: '#e74c3c', fontSize: '0.7rem' }} /> for math enthusiasts
+        <div className="flex flex-wrap items-center justify-between gap-[10px] border-t border-[#e9ecef] pt-[15px]">
+          <p className="m-0 flex items-center gap-1 text-xs opacity-80 text-[#6c757d]">
+            Made with <FaHeart className="text-[0.7rem] text-[#e74c3c]" /> for math enthusiasts
           </p>
-          <p style={{
-            fontSize: '0.75rem',
-            opacity: 0.8,
-            margin: '0',
-            color: '#6c757d',
-          }}>
+          <p className="m-0 text-xs opacity-80 text-[#6c757d]">
             © 2024 Magic Square. All rights reserved.
           </p>
         </div>

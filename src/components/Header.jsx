@@ -1,107 +1,31 @@
 import React from 'react';
 
 const Header = ({ currentPage, onNavigate }) => {
-  const isMobile = window.innerWidth < 768;
-  
-  // Responsive values
-  const padding = isMobile ? '8px 15px' : '8px 20px';
-  const logoHeight = isMobile ? '28px' : '32px';
-  const titleFontSize = isMobile ? '1.1rem' : '1.4rem';
-  const subtitleFontSize = isMobile ? '0.6rem' : '0.7rem';
-  const navGap = isMobile ? '6px' : '15px';
-  const buttonPadding = isMobile ? '5px 8px' : '8px 14px';
-  const buttonFontSize = isMobile ? '0.8rem' : '0.9rem';
-  const maxWidth = isMobile ? '100%' : '1200px';
-  const gap = isMobile ? '6px' : '8px';
-
   return (
-    <header style={{
-      background: '#f8f9fa',
-      color: '#343a40',
-      padding: padding,
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-      borderBottom: '1px solid #e9ecef',
-    }}>
-      <div style={{
-        maxWidth: maxWidth,
-        margin: '0 auto',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: isMobile ? 'wrap' : 'nowrap',
-        gap: gap,
-      }}>
+    <header className="sticky top-0 z-[100] border-b border-[#e9ecef] bg-[#f8f9fa] px-[15px] py-2 md:px-5 text-[#343a40] shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+      <div className="mx-auto flex max-w-full md:max-w-[1200px] flex-wrap md:flex-nowrap items-center justify-between gap-1.5 md:gap-2">
         {/* Logo and Title */}
-        <div 
+        <div
           onClick={() => onNavigate('home')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: gap,
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease',
-            minWidth: '0', // Allow flex shrinking
-            flex: isMobile ? '1' : 'none', // Allow expanding on mobile
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          className="flex flex-1 md:flex-none min-w-0 items-center gap-1.5 md:gap-2 cursor-pointer transition-transform duration-200 hover:scale-[1.02]"
         >
-          <img 
-            src="/magicsqlogo.png" 
+          <img
+            src="/magicsqlogo.png"
             alt="Magic SQ Logo"
-            style={{
-              height: logoHeight,
-              width: 'auto',
-              flexShrink: 0,
-            }}
+            className="h-7 md:h-8 w-auto shrink-0"
           />
-          <div style={{
-            minWidth: 0, // Allow text to truncate if needed
-          }}>
-            <h1 style={{
-              fontSize: titleFontSize,
-              fontWeight: '600',
-              margin: '0',
-              letterSpacing: '0.3px',
-              color: '#343a40',
-              whiteSpace: isMobile ? 'normal' : 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              lineHeight: isMobile ? '1.2' : 'normal',
-              wordBreak: isMobile ? 'break-word' : 'normal',
-            }}>
+          <div className="min-w-0">
+            <h1 className="m-0 text-[1.1rem] md:text-[1.4rem] font-semibold tracking-[0.3px] text-[#343a40] whitespace-normal md:whitespace-nowrap overflow-hidden text-ellipsis leading-[1.2] md:leading-normal break-words md:break-normal">
               Magic Square
             </h1>
-            <p style={{
-              fontSize: subtitleFontSize,
-              margin: '0',
-              opacity: 0.9,
-              fontWeight: '500',
-              color: '#495057',
-              whiteSpace: isMobile ? 'normal' : 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              letterSpacing: '0.5px',
-              lineHeight: isMobile ? '1.1' : 'normal',
-              wordBreak: isMobile ? 'break-word' : 'normal',
-            }}>
+            <p className="m-0 text-[0.6rem] md:text-[0.7rem] font-medium opacity-90 text-[#495057] whitespace-normal md:whitespace-nowrap overflow-hidden text-ellipsis tracking-[0.5px] leading-[1.1] md:leading-normal break-words md:break-normal">
               Boost your Brainpower!
             </p>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav style={{
-          display: 'flex',
-          gap: navGap,
-          alignItems: 'center',
-          flexShrink: 0,
-          flexWrap: isMobile ? 'wrap' : 'nowrap',
-          justifyContent: isMobile ? 'flex-end' : 'normal',
-        }}>
+        <nav className="flex shrink-0 flex-wrap md:flex-nowrap items-center justify-end md:justify-normal gap-1.5 md:gap-[15px]">
           {[
             { key: 'home', label: 'Home' },
             { key: 'about', label: 'About' },
@@ -110,31 +34,11 @@ const Header = ({ currentPage, onNavigate }) => {
             <button
               key={key}
               onClick={() => onNavigate(key)}
-              style={{
-                background: currentPage === key ? '#e9ecef' : 'transparent',
-                color: currentPage === key ? '#495057' : '#6c757d',
-                border: currentPage === key ? '1px solid #dee2e6' : '1px solid transparent',
-                padding: buttonPadding,
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: isMobile ? '0.75rem' : buttonFontSize,
-                fontWeight: '500',
-                transition: 'all 0.2s ease',
-                letterSpacing: '0.2px',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={(e) => {
-                if (currentPage !== key) {
-                  e.currentTarget.style.background = '#f1f3f4';
-                  e.currentTarget.style.color = '#495057';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (currentPage !== key) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#6c757d';
-                }
-              }}
+              className={`rounded-[6px] border px-2 py-[5px] md:px-3.5 md:py-2 text-[0.75rem] md:text-[0.9rem] font-medium tracking-[0.2px] whitespace-nowrap cursor-pointer transition-all duration-200 ${
+                currentPage === key
+                  ? 'bg-[#e9ecef] text-[#495057] border-[#dee2e6]'
+                  : 'bg-transparent text-[#6c757d] border-transparent hover:bg-[#f1f3f4] hover:text-[#495057]'
+              }`}
             >
               {label}
             </button>

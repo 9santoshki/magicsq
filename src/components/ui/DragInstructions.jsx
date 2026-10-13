@@ -6,16 +6,7 @@ const DragInstructions = ({ isMobileView }) => {
   }
 
   return (
-    <div style={{
-      padding: '8px',
-      background: '#e7f3ff',
-      borderRadius: '6px',
-      border: '1px solid #b8daff',
-      marginBottom: '8px',
-      textAlign: 'center',
-      fontSize: '0.8rem',
-      color: '#004085',
-    }}>
+    <div className="mb-2 rounded-[6px] border border-[#b8daff] bg-[#e7f3ff] p-2 text-center text-[0.8rem] text-[#004085]">
       <span>💡 Drag numbers from below and place them on the grid</span>
     </div>
   );
